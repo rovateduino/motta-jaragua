@@ -999,6 +999,200 @@ export async function updateAdminOrderStatus(input: unknown): Promise<AdminActio
 }
 
 /**
+ * Conclui uma entrega que já saiu para rota, na própria transação.
+ *
+ * Usa a máquina de estados (`OUT_FOR_DELIVERY -> COMPLETED`), baixa `onHand` e
+ * `reserved` do estoque, registra o movimento, o histórico de status e a
+ * auditoria. É a base da ação em massa da aba de entregas.
+ */
+async function markOrderAsDeliveredRecord(
+  adminId: string,
+  storeId: string,
+  orderId: string,
+) {
+  return prisma.$transaction(async (transaction) => {
+    const order = await transaction.order.findFirst({
+      where: { id: orderId, storeId, deletedAt: null },
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        items: {
+          select: { productId: true, quantity: true, productNameSnapshot: true },
+        },
+      },
+    });
+    if (!order) throw new AdminActionError("Pedido não encontrado.");
+    if (order.status !== "OUT_FOR_DELIVERY") {
+      throw new AdminActionError(
+        `O pedido ${order.orderNumber} não está em "Saiu para entrega".`,
+      );
+    }
+    assertTransition(order.status, "COMPLETED");
+
+    const completedAt = new Date();
+    const changed = await transaction.order.updateMany({
+      where: {
+        id: order.id,
+        status: "OUT_FOR_DELIVERY",
+        deletedAt: null,
+      },
+      data: { status: "COMPLETED", completedAt },
+    });
+    if (changed.count !== 1) {
+      throw new AdminActionError(
+        `O pedido ${order.orderNumber} foi atualizado por outra operação. Recarregue a página.`,
+      );
+    }
+
+    for (const item of order.items) {
+      if (!item.productId) continue;
+      const inventory = await transaction.inventory.findUnique({
+        where: {
+          storeId_productId: {
+            storeId,
+            productId: item.productId,
+          },
+        },
+        select: { id: true },
+      });
+      if (!inventory) {
+        throw new AdminActionError(
+          `Estoque não encontrado para ${item.productNameSnapshot}.`,
+        );
+      }
+
+      // `updatedAt` recebe um Date como parâmetro (em vez de NOW()) para ser
+      // compatível com PostgreSQL (produção/Neon) e SQLite (E2E local).
+      const affected = await transaction.$executeRaw`
+        UPDATE "Inventory"
+        SET "onHand" = "onHand" - ${item.quantity},
+            "reserved" = "reserved" - ${item.quantity},
+            "updatedAt" = ${new Date()}
+        WHERE "id" = ${inventory.id}
+          AND "onHand" >= ${item.quantity}
+          AND "reserved" >= ${item.quantity}
+      `;
+      if (affected !== 1) {
+        throw new AdminActionError(
+          `Não foi possível baixar o estoque de ${item.productNameSnapshot}.`,
+        );
+      }
+      await transaction.inventoryMovement.create({
+        data: {
+          inventoryId: inventory.id,
+          delta: -item.quantity,
+          reason: "SALE",
+          reference: order.orderNumber,
+          actorAdminId: adminId,
+          note: "Baixa de estoque ao concluir a entrega em massa.",
+        },
+      });
+    }
+
+    await transaction.orderStatusHistory.create({
+      data: {
+        orderId: order.id,
+        fromStatus: order.status,
+        toStatus: "COMPLETED",
+        changedByAdminId: adminId,
+        note: "Entrega concluída pela ação em massa.",
+      },
+    });
+    await transaction.auditLog.create({
+      data: {
+        actorType: "ADMIN",
+        actorAdminId: adminId,
+        action: "order.delivered",
+        entityType: "Order",
+        entityId: order.id,
+        before: { status: order.status },
+        after: {
+          status: "COMPLETED",
+          orderNumber: order.orderNumber,
+          completedAt: completedAt.toISOString(),
+        },
+      },
+    });
+
+    return order;
+  });
+}
+
+/**
+ * Marca em massa pedidos que saíram para entrega como concluídos. Cada pedido
+ * roda na própria transação, então uma falha isolada não impede os demais; a
+ * resposta informa quantos foram concluídos e o motivo dos que ficaram.
+ */
+export async function markOrdersAsDeliveredAction(
+  ids: string[],
+): Promise<AdminActionResult> {
+  const admin = await requireAdminAction("orders.update");
+  const parsed = z
+    .array(z.string().trim().min(1))
+    .min(1)
+    .max(200)
+    .safeParse(ids);
+  if (!parsed.success) {
+    return { ok: false, message: "Selecione ao menos uma entrega para concluir." };
+  }
+
+  const store = await prisma.store.findFirst({
+    where: { active: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!store) return { ok: false, message: "Não há uma loja ativa configurada." };
+
+  const uniqueIds = [...new Set(parsed.data)];
+  const failures: string[] = [];
+  const completedNumbers: string[] = [];
+
+  for (const id of uniqueIds) {
+    try {
+      const order = await markOrderAsDeliveredRecord(admin.id, store.id, id);
+      completedNumbers.push(order.orderNumber);
+    } catch (error) {
+      failures.push(
+        error instanceof AdminActionError
+          ? error.message
+          : "Falha inesperada ao concluir uma das entregas.",
+      );
+    }
+  }
+
+  if (completedNumbers.length === 0) {
+    return {
+      ok: false,
+      message: failures[0] ?? "Nenhuma entrega foi concluída.",
+    };
+  }
+
+  revalidatePath("/painel");
+  revalidatePath("/painel/entregas");
+  revalidatePath("/painel/pedidos");
+  revalidatePath("/pedidos");
+  for (const orderNumber of completedNumbers) {
+    revalidatePath(`/painel/pedidos/${orderNumber}`);
+    revalidatePath(`/pedidos/${orderNumber}`);
+  }
+
+  if (failures.length === 0) {
+    return {
+      ok: true,
+      message: `${completedNumbers.length} ${completedNumbers.length === 1 ? "entrega concluída" : "entregas concluídas"} com baixa de estoque.`,
+    };
+  }
+
+  const detail = failures.slice(0, 3).join(" ");
+  const rest = failures.length > 3 ? ` (+${failures.length - 3} outra(s))` : "";
+  return {
+    ok: false,
+    message: `${completedNumbers.length} de ${uniqueIds.length} concluídas. ${detail}${rest}`,
+  };
+}
+
+/**
  * Exclusão lógica (soft delete) de um pedido.
  *
  * O registro, os itens, o histórico de status e os documentos fiscais continuam
