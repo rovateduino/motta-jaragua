@@ -14,19 +14,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const resourceLabels: Record<string, { label: string; phase: string }> = {
-  checkout: { label: "Checkout demonstrativo", phase: "Fase 2" },
-  pedidos: { label: "Meus pedidos", phase: "Fase 2 / Fase 4" },
-  conta: { label: "Minha conta", phase: "Fase 4" },
-  cep: { label: "Consulta de CEP e cobertura", phase: "Fase 2 / Fase 5" },
-  entrega: { label: "Entrega e retirada", phase: "Fase 5" },
-  atendimento: { label: "Atendimento", phase: "Fase 2" },
-  "painel-administrativo": { label: "Painel administrativo", phase: "Fase 3" },
-  institucional: { label: "Informações institucionais", phase: "A definir" },
-  "trabalhe-conosco": { label: "Trabalhe conosco", phase: "A definir" },
-  privacidade: { label: "Política de privacidade", phase: "Revisão jurídica" },
-  termos: { label: "Termos de uso", phase: "Revisão jurídica" },
-  lgpd: { label: "Canal LGPD", phase: "Revisão jurídica" },
+const resourceLabels: Record<string, string> = {
+  checkout: "Finalizar pedido",
+  pedidos: "Meus pedidos",
+  conta: "Minha conta",
+  cep: "Consulta de CEP e cobertura",
+  entrega: "Entrega e retirada",
+  atendimento: "Atendimento",
+  "painel-administrativo": "Painel administrativo",
+  institucional: "Informações institucionais",
+  "trabalhe-conosco": "Trabalhe conosco",
+  privacidade: "Política de privacidade",
+  termos: "Termos de uso",
+  lgpd: "Canal LGPD",
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -47,17 +47,14 @@ export default async function ConstructionPage({
 
   const query = first(params.q);
   const name = first(params.nome);
-  const details = resourceLabels[resource];
-
-  const title = details?.label ?? "Esta área";
-  const phase = details?.phase ?? "Próximas fases";
+  const title = resourceLabels[resource] ?? "Esta área";
 
   return (
     <Container className="py-10 sm:py-16">
       <Card className="mx-auto max-w-2xl overflow-hidden">
         <div className="bg-gradient-to-br from-motta-red to-motta-red-dark px-6 py-8 text-white">
           <p className="text-xs font-bold uppercase tracking-widest text-motta-yellow">
-            {phase}
+            Mercado Motta Jaraguá
           </p>
           <h1 className="mt-2 text-3xl font-black uppercase italic sm:text-4xl">
             Em construção
@@ -69,9 +66,8 @@ export default async function ConstructionPage({
         </div>
         <CardBody className="space-y-4">
           <p className="text-sm leading-relaxed text-motta-gray-700">
-            Esta funcionalidade ainda não faz parte desta versão demonstrativa. A
-            navegação está preparada, mas nenhuma ação comercial é simulada como se
-            fosse real neste momento.
+            Esta funcionalidade ainda não está disponível. Estamos preparando esta
+            área para oferecer a melhor experiência de compra.
           </p>
 
           {query ? (
@@ -79,16 +75,11 @@ export default async function ConstructionPage({
               Você buscou por <strong className="text-motta-ink">“{query}”</strong>. A
               busca está disponível no{" "}
               <Link href="/catalogo" className="font-semibold text-motta-red hover:underline">
-                catálogo demonstrativo
+                catálogo
               </Link>
               .
             </div>
           ) : null}
-
-          <div className="rounded-xl border border-dashed border-motta-gray-300 p-3 text-xs leading-relaxed text-motta-gray-500">
-            <strong className="font-bold text-motta-ink">Modo demonstração:</strong>{" "}
-            dados fictícios, sem cobrança e sem envio real de pedidos.
-          </div>
 
           <div className="flex flex-wrap gap-3 pt-1">
             <Link href="/" className={buttonStyles({ variant: "primary" })}>
@@ -99,7 +90,7 @@ export default async function ConstructionPage({
               href="/ofertas"
               className={buttonStyles({ variant: "outline" })}
             >
-              Ver ofertas demonstrativas
+              Ver ofertas
             </Link>
           </div>
         </CardBody>

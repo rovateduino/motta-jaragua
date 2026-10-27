@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: category.name,
-    description: `${category.description} Catálogo fictício do Mercado Motta Jaraguá.`,
+    description: `${category.description} Encontre produtos do Mercado Motta Jaraguá.`,
   };
 }
 

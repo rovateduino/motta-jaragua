@@ -5,7 +5,7 @@ import { getAdminStoreSettings } from "@/lib/admin-db";
 
 export const metadata: Metadata = {
   title: "Configurações",
-  description: "Configurações fictícias da loja no painel demonstrativo.",
+  description: "Gerencie os dados da loja e as regras de entrega e retirada.",
   robots: { index: false, follow: false },
 };
 

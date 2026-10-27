@@ -16,7 +16,6 @@ import type { Address, FulfillmentType, SubstitutionPreference } from "@motta/co
 import { useCart } from "@/components/cart/cart-provider";
 import { createOrderAction } from "@/lib/orders-actions";
 import type { PickupSlotView } from "@/lib/orders-db";
-import { demoStoreInfo, demoSubstitutionOptions } from "@/lib/demo-content";
 
 /**
  * Regras de negócio do checkout. Vêm das `Setting` do banco e servem apenas
@@ -30,6 +29,33 @@ export interface CheckoutRules {
   readonly freeShippingThresholdCents: number;
   readonly minimumOrderCents: number;
 }
+
+const substitutionOptions: ReadonlyArray<{
+  value: SubstitutionPreference;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "CONTACT_BEFORE",
+    label: "Falar comigo antes de substituir",
+    description: "A equipe entrará em contato antes de trocar um item.",
+  },
+  {
+    value: "ACCEPT_EQUIVALENT",
+    label: "Aceito produto equivalente",
+    description: "Permite trocar por outro item de valor e marca semelhantes.",
+  },
+  {
+    value: "DO_NOT_SUBSTITUTE",
+    label: "Não substituir",
+    description: "Se faltar, o item será removido do pedido.",
+  },
+  {
+    value: "REMOVE_ITEM",
+    label: "Remover o item se faltar",
+    description: "O item indisponível será removido do pedido sem substituição.",
+  },
+];
 
 interface CheckoutFormState {
   fulfillmentType: FulfillmentType;
@@ -48,7 +74,11 @@ interface CheckoutFormState {
   notes: string;
 }
 
-function buildInitialState(pickupSlotId: string): CheckoutFormState {
+function buildInitialState(
+  pickupSlotId: string,
+  city: string,
+  state: string,
+): CheckoutFormState {
   return {
     fulfillmentType: "DELIVERY",
     substitutionPreference: "CONTACT_BEFORE",
@@ -60,8 +90,8 @@ function buildInitialState(pickupSlotId: string): CheckoutFormState {
     number: "",
     complement: "",
     district: "",
-    city: demoStoreInfo.city,
-    state: demoStoreInfo.state,
+    city,
+    state,
     pickupSlot: pickupSlotId,
     notes: "",
   };
@@ -143,13 +173,19 @@ interface CreatedOrder {
 export function CheckoutView({
   rules,
   pickupSlots,
+  storeLocation,
 }: {
   rules: CheckoutRules;
   pickupSlots: readonly PickupSlotView[];
+  storeLocation: { city: string; state: string };
 }) {
   const { items, hydrated, subtotalCents, clearCart } = useCart();
   const [form, setForm] = useState<CheckoutFormState>(() =>
-    buildInitialState(pickupSlots[0]?.id ?? ""),
+    buildInitialState(
+      pickupSlots[0]?.id ?? "",
+      storeLocation.city,
+      storeLocation.state,
+    ),
   );
   const [errors, setErrors] = useState<FormErrors>({});
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
@@ -188,8 +224,8 @@ export function CheckoutView({
               Pedido recebido
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-motta-gray-500">
-              Guarde o número abaixo. O pedido foi gravado no banco da demonstração e já
-              aparece em <strong>Meus Pedidos</strong>.
+              Guarde o número abaixo. O pedido foi registrado e já aparece em{" "}
+              <strong>Meus Pedidos</strong>.
             </p>
             <p className="mt-4 rounded-xl border border-dashed border-motta-gray-300 bg-motta-gray-50 px-4 py-3 font-mono text-lg font-bold tracking-wider text-motta-ink">
               {createdOrder.orderNumber}
@@ -210,10 +246,6 @@ export function CheckoutView({
                 Meus pedidos
               </Link>
             </div>
-            <p className="mt-5 text-[11px] leading-relaxed text-motta-gray-500">
-              Nenhuma cobrança foi realizada e nenhum pagamento será processado nesta
-              demonstração. O estoque dos itens já está reservado no banco.
-            </p>
           </CardBody>
         </Card>
       </Container>
@@ -348,11 +380,9 @@ export function CheckoutView({
         <h1 className="text-3xl font-black tracking-tight text-motta-ink sm:text-4xl">
           Finalizar pedido
         </h1>
-        <Badge variant="offer">Demonstração</Badge>
       </div>
       <p className="mt-1 max-w-2xl text-sm text-motta-gray-500">
-        Escolha entrega ou retirada. O pedido é gravado no banco da demonstração — nenhum
-        pagamento é processado.
+        Escolha entre entrega e retirada, informe seus dados e revise o pedido antes de concluir.
       </p>
 
       <form
@@ -512,7 +542,7 @@ export function CheckoutView({
                       value={form.street}
                       onChange={(event) => update("street", event.target.value)}
                       autoComplete="address-line1"
-                      placeholder="Rua Demonstrativa"
+                      placeholder="Rua das Flores"
                       aria-invalid={Boolean(errors.street)}
                       aria-describedby={errors.street ? "street-erro" : undefined}
                     />
@@ -631,7 +661,7 @@ export function CheckoutView({
                   </div>
                 )}
                 <p className="text-[11px] leading-relaxed text-motta-gray-500">
-                  {demoStoreInfo.pickupNote}
+                  Selecione uma das janelas disponíveis para retirar seu pedido.
                 </p>
               </CardBody>
             </Card>
@@ -658,7 +688,7 @@ export function CheckoutView({
                   }
                   className="h-11 w-full rounded-xl border border-motta-gray-300 bg-white px-3 text-sm text-motta-ink focus-visible:border-motta-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-motta-red/30"
                 >
-                  {demoSubstitutionOptions.map((option) => (
+                  {substitutionOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -717,7 +747,7 @@ export function CheckoutView({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-motta-gray-700">
-                  {isDelivery ? "Entrega (fictícia)" : "Retirada"}
+                  {isDelivery ? "Entrega" : "Retirada"}
                 </span>
                 <span className="font-semibold text-motta-ink">
                   {deliveryFeeCents === 0 ? "Grátis" : formatBRL(deliveryFeeCents)}
@@ -756,10 +786,6 @@ export function CheckoutView({
               <ArrowRightIcon className="h-4 w-4" />
             </button>
 
-            <p className="text-center text-[11px] leading-relaxed text-motta-gray-500">
-              Nenhum pagamento é processado. O pedido é registrado no banco da
-              demonstração e fica disponível em Meus Pedidos.
-            </p>
           </CardBody>
         </Card>
       </form>

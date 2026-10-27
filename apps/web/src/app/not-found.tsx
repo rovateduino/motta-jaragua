@@ -11,7 +11,7 @@ export default function NotFound() {
         Página não encontrada
       </h1>
       <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-motta-gray-500">
-        O endereço acessado não existe nesta versão da loja. Volte ao início para
+        O endereço acessado não foi encontrado. Volte ao início para
         continuar navegando.
       </p>
       <Link href="/" className={`${buttonStyles({ variant: "primary" })} mt-6`}>

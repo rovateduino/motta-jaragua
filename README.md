@@ -2,8 +2,6 @@
 
 Plataforma de e-commerce do **Mercado Motta Jaraguá** — loja virtual responsiva, operação de supermercado e painel administrativo.
 
-> **Ambiente de demonstração.** O catálogo, os pedidos e as operações do painel persistem no banco configurado; use somente dados fictícios. Não há cobrança nem integração de entrega.
-
 ## Status
 
 **Fases 1 a 4 concluídas.** A loja e o painel usam PostgreSQL/Prisma para catálogo,
@@ -13,8 +11,8 @@ ao navegador; pagamentos e integrações operacionais são escopo da Fase 5.
 | Fase | Escopo | Status |
 |---|---|---|
 | 1 — Fundação | Monorepo, CI, design tokens, app shell, domínio, contratos, schema, seeds, adapters | ✅ |
-| 2 — Loja demo | Catálogo, busca, ofertas com vigência, carrinho, checkout e pedidos demo | ✅ |
-| 3 — Admin demo | Dashboard, pedidos, produtos/estoque, ofertas, clientes, entregas, relatórios e configurações | ✅ |
+| 2 — Loja pública | Catálogo, busca, ofertas com vigência, carrinho, checkout e pedidos | ✅ |
+| 3 — Painel administrativo | Dashboard, pedidos, produtos/estoque, ofertas, clientes, entregas, relatórios e configurações | ✅ |
 | 4 — Núcleo real | Catálogo, checkout e painel administrativo persistidos no PostgreSQL, autenticação e RBAC | ✅ |
 | 5 — Integrações | Pagamento/Pix, WhatsApp, e-mail, fiscal, ERP, entrega | ⏳ |
 | 6 — Go-live | Segurança, acessibilidade, observabilidade, LGPD | ⏳ |
@@ -158,16 +156,16 @@ Copie `.env.example` para `.env`. Nomes principais:
   `sslmode=require`.
 - `npm run db:migrate` executa `prisma migrate deploy`, adequado a ambientes
   gerenciados; `db:migrate:dev` fica restrito ao desenvolvimento local.
-- Banco demo Neon provisionado: migration `0001_init` aplicada e seed idempotente
+- Banco Neon provisionado: migration `0001_init` aplicada e seed idempotente
   executado (1 loja, 10 categorias, 26 produtos, 5 promoções e 9 janelas de
   entrega). A loja e o painel consomem o banco em runtime a partir da Fase 4.
 
-## Modo demonstração
+## Configuração do ambiente
 
-- `APP_MODE=demo` ativa o banner de demonstração e metadados `noindex`.
+- `APP_MODE=production` habilita a indexação; outros modos mantêm metadados `noindex`.
 - Integrações externas usam adapters que **falham explicitamente** com
   `IntegrationNotConfiguredError`; nada aparenta funcionar sem credenciais.
-- Seeds usam apenas produtos, preços e estoques fictícios.
+- Seeds disponibilizam dados de catálogo e estoque para testes.
 - O carrinho é salvo no navegador; contas, sessões, pedidos e dados do painel são
   persistidos no PostgreSQL.
 - O painel `/painel` exige autenticação e aplica permissões RBAC nas páginas e

@@ -26,17 +26,17 @@ const trustItems = [
   {
     icon: TruckIcon,
     title: "Entrega em domicílio",
-    description: "Regras de área, taxa e janela serão confirmadas com o Mercado Motta.",
+    description: "Consulte as condições de entrega ao finalizar seu pedido.",
   },
   {
     icon: StoreIcon,
     title: "Retirada na loja",
-    description: "Escolha o melhor horário e retire sem sair do carro, quando disponível.",
+    description: "Escolha uma janela disponível para retirar seu pedido.",
   },
   {
     icon: HeadsetIcon,
     title: "Atendimento próximo",
-    description: "Canais oficiais de atendimento serão publicados após validação.",
+    description: "Encontre as informações de contato da loja no rodapé.",
   },
 ];
 
@@ -48,6 +48,9 @@ export default async function HomePage() {
   const featuredImageUrl = featured
     ? resolveProductImageUrl(featured)
     : null;
+  const featuredCategory = catalog?.categories.find(
+    (category) => category.slug === featured?.categorySlug,
+  );
 
   return (
     <>
@@ -80,7 +83,7 @@ export default async function HomePage() {
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-white sm:text-base">
               Do hortifruti ao pet shop, o Mercado Motta Jaraguá está perto de
               você. Explore os departamentos, busque produtos e monte seu carrinho
-              demonstrativo.
+              com praticidade.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
@@ -100,62 +103,54 @@ export default async function HomePage() {
                 Explorar catálogo
               </Link>
             </div>
-            <p className="mt-4 text-[11px] font-semibold text-white/90">
-              Valores e produtos fictícios para demonstração. Nenhuma compra é
-              processada nesta versão.
-            </p>
           </div>
 
-          <div aria-hidden="true" className="relative hidden lg:block">
-            <div className="relative mx-auto max-w-sm rotate-2 rounded-3xl bg-white p-5 pb-16 text-motta-ink shadow-2xl">
-              <div className="flex items-center justify-between">
-                <Badge variant="offer">
-                  {featured && hasPromotion(featured) ? "Oferta" : "Destaque"}
-                </Badge>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-motta-gray-500">
-                  Exemplo visual
-                </span>
-              </div>
-              <div className="mt-3 flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-white text-8xl">
-                {featuredImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- URLs públicas de imagens cadastradas.
-                  <img
-                    src={featuredImageUrl}
-                    alt=""
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  featured?.emoji ?? "🍚"
-                )}
-              </div>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-motta-gray-500">
-                Mercearia
-              </p>
-              <p className="text-base font-bold">
-                {featured?.name ?? "Arroz Tipo 1 5kg"}
-              </p>
-              <div className="mt-2 flex items-end gap-2">
-                <span className="text-3xl font-extrabold leading-none text-motta-red">
-                  {formatBRL(featured?.priceCents ?? 2190)}
-                </span>
-                {featured?.originalPriceCents ? (
-                  <span className="pb-1 text-xs text-motta-gray-500 line-through">
-                    {formatBRL(featured.originalPriceCents)}
+          {featured ? (
+            <div aria-hidden="true" className="relative hidden lg:block">
+              <div className="relative mx-auto max-w-sm rotate-2 rounded-3xl bg-white p-5 pb-16 text-motta-ink shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <Badge variant="offer">
+                    {hasPromotion(featured) ? "Oferta" : "Destaque"}
+                  </Badge>
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-motta-gray-500">
+                    Destaque da loja
                   </span>
-                ) : null}
+                </div>
+                <div className="mt-3 flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-white text-8xl">
+                  {featuredImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- URLs públicas de imagens cadastradas.
+                    <img
+                      src={featuredImageUrl}
+                      alt=""
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    featured.emoji
+                  )}
+                </div>
+                <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-motta-gray-500">
+                  {featuredCategory?.name ?? "Produto"}
+                </p>
+                <p className="text-base font-bold">{featured.name}</p>
+                <div className="mt-2 flex items-end gap-2">
+                  <span className="text-3xl font-extrabold leading-none text-motta-red">
+                    {formatBRL(featured.priceCents)}
+                  </span>
+                  {featured.originalPriceCents ? (
+                    <span className="pb-1 text-xs text-motta-gray-500 line-through">
+                      {formatBRL(featured.originalPriceCents)}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="absolute -right-3 top-16 rotate-6 rounded-2xl bg-motta-ink px-4 py-3 text-white shadow-xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-motta-yellow">
+                  Entrega
+                </p>
+                <p className="text-sm font-bold">e retirada</p>
               </div>
             </div>
-            <div className="absolute -bottom-6 -left-4 -rotate-6 rounded-2xl bg-motta-yellow px-4 py-3 text-motta-ink shadow-xl">
-              <p className="text-[10px] font-black uppercase tracking-widest">Preço destaque</p>
-              <p className="text-2xl font-black leading-none">{formatBRL(749)}</p>
-            </div>
-            <div className="absolute -right-3 top-16 rotate-6 rounded-2xl bg-motta-ink px-4 py-3 text-white shadow-xl">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-motta-yellow">
-                Entrega
-              </p>
-              <p className="text-sm font-bold">e retirada</p>
-            </div>
-          </div>
+          ) : null}
         </Container>
       </section>
 
@@ -219,9 +214,8 @@ export default async function HomePage() {
                   Um painel para toda a operação
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">
-                  Pedidos, produtos, estoque, ofertas, entregas e relatórios em um
-                  só lugar. O painel demonstrativo já está disponível, com guard de
-                  acesso, auditoria local e dados fictícios.
+                  Acompanhe pedidos, atualize produtos e preços, gerencie o estoque
+                  e consulte relatórios em um só lugar.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-4 text-xs text-white/60">
                   <span className="inline-flex items-center gap-1.5">
@@ -238,16 +232,11 @@ export default async function HomePage() {
                 href="/painel"
                 className={buttonStyles({ variant: "secondary", size: "lg" })}
               >
-                Abrir painel demo
+                Abrir painel
               </Link>
             </div>
           </div>
         </section>
-
-        <p className="mt-8 text-center text-xs leading-relaxed text-motta-gray-500">
-          Ambiente de demonstração. Nenhum dado real de cliente, preço, estoque ou
-          pagamento é utilizado nesta versão.
-        </p>
       </Container>
     </>
   );

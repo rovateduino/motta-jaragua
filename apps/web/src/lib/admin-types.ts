@@ -84,6 +84,7 @@ export interface AdminStoreSettings {
   readonly state: string;
   readonly zipCode: string;
   readonly phone: string;
+  readonly hours: string;
   readonly deliveryEnabled: boolean;
   readonly pickupEnabled: boolean;
   readonly deliveryFeeCents: number;

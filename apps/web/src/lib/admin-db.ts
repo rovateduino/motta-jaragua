@@ -263,6 +263,7 @@ export async function getAdminStoreSettings(): Promise<AdminStoreSettings | null
     where: {
       key: {
         in: [
+          "store.hours",
           "delivery.enabled",
           "pickup.enabled",
           "delivery.feeCents",
@@ -274,6 +275,7 @@ export async function getAdminStoreSettings(): Promise<AdminStoreSettings | null
     select: { key: true, value: true },
   });
   const values = new Map(rows.map((row) => [row.key, row.value]));
+  const hours = values.get("store.hours");
   const numberValue = (key: string) => {
     const value = values.get(key);
     return typeof value === "number" ? value : 0;
@@ -292,6 +294,7 @@ export async function getAdminStoreSettings(): Promise<AdminStoreSettings | null
     state: store.state,
     zipCode: store.zipCode,
     phone: store.phone ?? "",
+    hours: typeof hours === "string" ? hours : "",
     deliveryEnabled: booleanValue("delivery.enabled"),
     pickupEnabled: booleanValue("pickup.enabled"),
     deliveryFeeCents: numberValue("delivery.feeCents"),

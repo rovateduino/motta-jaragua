@@ -5,7 +5,6 @@ import {
   ChevronRightIcon,
   Container,
   HeadsetIcon,
-  ShieldCheckIcon,
   StoreIcon,
   TruckIcon,
 } from "@motta/ui";
@@ -28,17 +27,17 @@ const trustItems = [
   {
     icon: TruckIcon,
     title: "Entrega e retirada",
-    description: "Regras e taxas serão confirmadas com o Mercado Motta.",
+    description: "Consulte as condições disponíveis ao finalizar o pedido.",
   },
   {
     icon: StoreIcon,
-    title: "Compra demonstrativa",
-    description: "Nenhuma cobrança ou pedido real é processado.",
+    title: "Compra prática",
+    description: "Escolha seus produtos e acompanhe seus pedidos pela sua conta.",
   },
   {
     icon: HeadsetIcon,
     title: "Atendimento próximo",
-    description: "Canais oficiais serão publicados após validação.",
+    description: "Consulte os dados de contato da loja no rodapé.",
   },
 ];
 
@@ -64,7 +63,7 @@ export function ProductStoreView({
             Produto não encontrado
           </h1>
           <p className="mt-2 text-sm text-motta-gray-500">
-            Este produto pode ter sido desativado ou removido do catálogo demo.
+            Este produto pode ter sido desativado ou removido do catálogo.
           </p>
           <Link
             href="/catalogo"
@@ -168,7 +167,7 @@ export function ProductStoreView({
               </div>
               {imageUrl ? null : (
                 <span className="absolute bottom-3 right-4 text-[10px] font-semibold uppercase tracking-wide text-motta-gray-500">
-                  Ilustração fictícia
+                  Ilustração
                 </span>
               )}
             </div>
@@ -212,7 +211,7 @@ export function ProductStoreView({
               {product.name}
             </h1>
             <p className="mt-1 text-xs text-motta-gray-500">
-              Código demonstrativo: {product.sku}
+              Código do produto: {product.sku}
             </p>
 
             <p className="mt-4 text-sm leading-relaxed text-motta-gray-700">
@@ -221,7 +220,7 @@ export function ProductStoreView({
 
             {hasPromotion(product) && product.promotion ? (
               <p className="mt-3 inline-flex rounded-lg bg-motta-yellow/40 px-3 py-1.5 text-xs font-semibold text-motta-ink">
-                Oferta fictícia válida até{" "}
+                Oferta válida até{" "}
                 {new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(
                   new Date(product.promotion.endsAt),
                 )}
@@ -233,16 +232,6 @@ export function ProductStoreView({
               <ProductPurchasePanel product={product} />
             </div>
 
-            <div className="mt-6 rounded-xl border border-motta-gray-200 bg-white p-4 text-xs leading-relaxed text-motta-gray-500">
-              <p className="inline-flex items-center gap-1.5 font-bold text-motta-ink">
-                <ShieldCheckIcon className="h-4 w-4 text-motta-red" />
-                Compra protegida no demonstrador
-              </p>
-              <p className="mt-1">
-                Preços, estoque e disponibilidade são fictícios. O carrinho é salvo
-                apenas no seu navegador e não envia dados para nenhum servidor.
-              </p>
-            </div>
           </div>
         </div>
 

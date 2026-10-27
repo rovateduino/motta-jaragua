@@ -26,6 +26,7 @@ export function AdminSettingsView({ settings }: { settings: AdminStoreSettings |
   const [state, setState] = useState(settings?.state ?? "");
   const [zipCode, setZipCode] = useState(settings?.zipCode ?? "");
   const [phone, setPhone] = useState(settings?.phone ?? "");
+  const [hours, setHours] = useState(settings?.hours ?? "");
   const [deliveryEnabled, setDeliveryEnabled] = useState(settings?.deliveryEnabled ?? true);
   const [pickupEnabled, setPickupEnabled] = useState(settings?.pickupEnabled ?? true);
   const [deliveryFee, setDeliveryFee] = useState(moneyInput(settings?.deliveryFeeCents ?? 0));
@@ -56,6 +57,7 @@ export function AdminSettingsView({ settings }: { settings: AdminStoreSettings |
         state,
         zipCode,
         phone,
+        hours,
         deliveryEnabled,
         pickupEnabled,
         deliveryFeeCents,
@@ -81,6 +83,7 @@ export function AdminSettingsView({ settings }: { settings: AdminStoreSettings |
             <h2 className="text-lg font-extrabold sm:col-span-2">Dados da loja</h2>
             <label className="text-xs font-bold">Nome<input required value={name} onChange={(event) => setName(event.target.value)} className={fieldClass} /></label>
             <label className="text-xs font-bold">Telefone<input value={phone} onChange={(event) => setPhone(event.target.value)} className={fieldClass} /></label>
+            <label className="text-xs font-bold sm:col-span-2">Horário de funcionamento<input value={hours} onChange={(event) => setHours(event.target.value)} className={fieldClass} placeholder="Segunda a sábado, das 8h às 20h" /></label>
             <label className="text-xs font-bold sm:col-span-2">Endereço<input required value={addressLine} onChange={(event) => setAddressLine(event.target.value)} className={fieldClass} /></label>
             <label className="text-xs font-bold">Bairro<input required value={district} onChange={(event) => setDistrict(event.target.value)} className={fieldClass} /></label>
             <label className="text-xs font-bold">Cidade<input required value={city} onChange={(event) => setCity(event.target.value)} className={fieldClass} /></label>

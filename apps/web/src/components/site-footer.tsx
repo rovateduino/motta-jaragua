@@ -1,9 +1,25 @@
 import Link from "next/link";
-import { Badge, Container } from "@motta/ui";
+import { Container } from "@motta/ui";
 import { footerColumns } from "@/lib/site";
+import type { StoreSettings } from "@/lib/orders-db";
 import { Logo } from "./logo";
 
-export function SiteFooter() {
+export function SiteFooter({
+  storeSettings,
+}: {
+  storeSettings: StoreSettings | null;
+}) {
+  const address = storeSettings
+    ? [
+        storeSettings.addressLine,
+        storeSettings.district,
+        [storeSettings.city, storeSettings.state].filter(Boolean).join("/"),
+        storeSettings.zipCode && `CEP ${storeSettings.zipCode}`,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+
   return (
     <footer className="mt-12 bg-motta-ink text-white">
       <Container className="py-10">
@@ -11,19 +27,27 @@ export function SiteFooter() {
           <div className="lg:col-span-2">
             <Logo inverted />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/70">
-              Plataforma de compras online do Mercado Motta Jaraguá. Projeto em
-              desenvolvimento, com identidade regional e foco em uma experiência
-              simples para toda a família.
+              Plataforma de compras online do Mercado Motta Jaraguá, com ofertas,
+              produtos e atendimento para toda a família.
             </p>
-            <div className="mt-4">
-              <Badge variant="demo" className="border border-white/60 bg-white/10 text-white">
-                Ambiente de demonstração
-              </Badge>
-            </div>
-            <p className="mt-3 text-xs text-white/50">
-              Endereço, telefone, horários e canais oficiais serão publicados após
-              confirmação do Mercado Motta.
-            </p>
+            {storeSettings ? (
+              <address className="mt-4 space-y-2 text-xs not-italic leading-relaxed text-white/70">
+                <p className="font-bold text-white">{storeSettings.storeName}</p>
+                {address ? <p>{address}</p> : null}
+                {storeSettings.phone ? (
+                  <p>
+                    Telefone:{" "}
+                    <a
+                      href={`tel:${storeSettings.phone.replace(/[^\d+]/g, "")}`}
+                      className="hover:text-white hover:underline"
+                    >
+                      {storeSettings.phone}
+                    </a>
+                  </p>
+                ) : null}
+                {storeSettings.hours ? <p>Horário: {storeSettings.hours}</p> : null}
+              </address>
+            ) : null}
           </div>
 
           {footerColumns.map((column) => (
@@ -49,13 +73,8 @@ export function SiteFooter() {
 
         <div className="mt-10 border-t border-white/10 pt-6 text-xs leading-relaxed text-white/50">
           <p>
-            Os preços, produtos e promoções exibidos nesta versão são fictícios e
-            não representam ofertas comerciais. Nenhuma cobrança é realizada e
-            nenhum pedido real é enviado.
-          </p>
-          <p className="mt-2">
             © {new Date().getFullYear()} Mercado Motta Jaraguá. Todos os direitos
-            reservados. Conteúdo de demonstração.
+            reservados.
           </p>
         </div>
       </Container>

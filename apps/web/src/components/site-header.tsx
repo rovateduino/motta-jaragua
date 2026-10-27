@@ -7,7 +7,7 @@ import {
   UserIcon,
 } from "@motta/ui";
 import { constructionHref, primaryNav } from "@/lib/site";
-import { demoStoreInfo } from "@/lib/demo-content";
+import type { StoreSettings } from "@/lib/orders-db";
 import { CartLink } from "@/components/cart/cart-link";
 import { Logo } from "./logo";
 import { SearchBox } from "./search-box";
@@ -35,7 +35,11 @@ function IconLink({
   );
 }
 
-export function SiteHeader() {
+export function SiteHeader({
+  storeSettings,
+}: {
+  storeSettings: StoreSettings | null;
+}) {
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm">
       <div className="bg-motta-red text-white">
@@ -43,7 +47,9 @@ export function SiteHeader() {
           <p className="flex min-w-0 items-center gap-1.5">
             <MapPinIcon className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">
-              {demoStoreInfo.city} • {demoStoreInfo.state}
+              {storeSettings
+                ? `${storeSettings.city} • ${storeSettings.state}`
+                : "Mercado Motta Jaraguá"}
             </span>
           </p>
           <div className="flex shrink-0 items-center gap-4">
@@ -51,7 +57,7 @@ export function SiteHeader() {
               href={constructionHref("cep")}
               className="underline-offset-2 hover:underline"
             >
-              {demoStoreInfo.cepPlaceholder}
+              Consultar CEP
             </Link>
             <Link
               href="/admin"

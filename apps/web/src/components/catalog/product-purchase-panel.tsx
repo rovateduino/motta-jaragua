@@ -96,7 +96,7 @@ export function ProductPurchasePanel({
           role="status"
           className="rounded-xl border border-motta-red/20 bg-red-50 px-4 py-3 text-sm text-motta-red-dark"
         >
-          Este produto está indisponível no catálogo de demonstração.
+          Este produto está indisponível no momento.
         </div>
       )}
 
@@ -112,11 +112,11 @@ export function ProductPurchasePanel({
       />
 
       <p className="text-center text-xs leading-relaxed text-motta-gray-500">
-        Quantidade e preço são demonstrativos. Você poderá revisar tudo no{" "}
+        Confira os itens e as condições no{" "}
         <Link href="/carrinho" className="font-semibold text-motta-red underline-offset-2 hover:underline">
           carrinho
         </Link>
-        . Nenhuma cobrança é realizada.
+        {" "}antes de concluir o pedido.
       </p>
     </div>
   );

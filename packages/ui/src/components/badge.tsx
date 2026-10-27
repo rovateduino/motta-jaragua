@@ -1,14 +1,13 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "../cn";
 
-export type BadgeVariant = "offer" | "neutral" | "success" | "danger" | "demo";
+export type BadgeVariant = "offer" | "neutral" | "success" | "danger";
 
 const variants: Record<BadgeVariant, string> = {
   offer: "bg-motta-yellow text-motta-ink",
   neutral: "bg-motta-gray-100 text-motta-gray-700",
   success: "bg-green-100 text-green-800",
   danger: "bg-red-100 text-motta-red-dark",
-  demo: "bg-motta-ink text-white",
 };
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {

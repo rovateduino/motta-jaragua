@@ -60,6 +60,7 @@ const settingsInputSchema = z.object({
   state: z.string().trim().length(2).transform((value) => value.toUpperCase()),
   zipCode: z.string().trim().regex(/^\d{5}-?\d{3}$/),
   phone: z.string().trim().max(20),
+  hours: z.string().trim().max(200),
   deliveryEnabled: z.boolean(),
   pickupEnabled: z.boolean(),
   deliveryFeeCents: z.number().int().nonnegative(),
@@ -1426,6 +1427,7 @@ export async function saveAdminStoreSettings(
       });
       const settings: Array<[string, string | boolean | number]> = [
         ["store.name", data.name],
+        ["store.hours", data.hours],
         ["delivery.enabled", data.deliveryEnabled],
         ["pickup.enabled", data.pickupEnabled],
         ["delivery.feeCents", data.deliveryFeeCents],
@@ -1450,6 +1452,7 @@ export async function saveAdminStoreSettings(
             name: store.name,
             city: store.city,
             state: store.state,
+            hours: data.hours,
             deliveryEnabled: data.deliveryEnabled,
             pickupEnabled: data.pickupEnabled,
             deliveryFeeCents: data.deliveryFeeCents,

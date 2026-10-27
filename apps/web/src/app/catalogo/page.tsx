@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Catálogo completo",
   description:
-    "Explore todos os departamentos e produtos fictícios do Mercado Motta Jaraguá em ambiente de demonstração.",
+    "Explore os departamentos e produtos do Mercado Motta Jaraguá.",
 };
 
 export default async function CatalogoPage({
@@ -41,9 +41,9 @@ export default async function CatalogoPage({
     : (category?.name ?? "Catálogo completo");
   const eyebrow = query.q ? "Busca" : (category?.tagline ?? "Todos os departamentos");
   const description = query.q
-    ? "Resultados da busca no catálogo fictício. Refine por departamento ou use a opção de somente ofertas."
+    ? "Resultados da busca no catálogo. Refine por departamento ou use a opção de somente ofertas."
     : (category?.description ??
-      "Do hortifruti ao pet shop: navegue pelo catálogo demonstrativo e monte seu carrinho.");
+      "Do hortifruti ao pet shop: navegue pelo catálogo e monte seu carrinho.");
 
   return (
     <CatalogStoreView

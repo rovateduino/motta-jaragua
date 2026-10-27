@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Ofertas da semana",
   description:
-    "Ofertas fictícias do Mercado Motta Jaraguá para demonstração da loja. Nenhum preço é comercial.",
+    "Confira as ofertas da semana do Mercado Motta Jaraguá.",
 };
 
 export default async function OfertasPage({
@@ -47,7 +47,7 @@ export default async function OfertasPage({
       categories={catalog.categories}
       eyebrow="Economize mais"
       title={category ? `Ofertas em ${category.name}` : "Ofertas da semana"}
-      description="Seleção fictícia de produtos com preço promocional para validar a experiência de compra. As ofertas não são comerciais."
+      description="Confira os produtos com preços promocionais e aproveite as ofertas da semana."
       breadcrumb={[
         { label: "Ofertas", href: category ? "/ofertas" : undefined },
         ...(category ? [{ label: category.name }] : []),

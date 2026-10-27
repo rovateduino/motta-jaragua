@@ -61,8 +61,7 @@ export function CartView({
               Seu carrinho está vazio
             </h1>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-motta-gray-500">
-              Explore o catálogo demonstrativo, escolha produtos e monte seu carrinho.
-              Nenhuma cobrança é realizada neste ambiente.
+              Explore o catálogo, escolha seus produtos e monte seu carrinho.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link href="/catalogo" className={buttonStyles({ variant: "primary" })}>

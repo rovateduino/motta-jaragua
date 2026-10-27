@@ -37,11 +37,9 @@ export function OrdersListView({ orders }: { orders: readonly OrderSummaryView[]
             <h1 className="text-3xl font-black tracking-tight text-motta-ink sm:text-4xl">
               Meus pedidos
             </h1>
-            <Badge variant="demo">Demonstração</Badge>
           </div>
           <p className="mt-1 max-w-2xl text-sm text-motta-gray-500">
-            Pedidos registrados na sua conta. Nenhum pagamento é processado neste
-            ambiente de demonstração.
+            Consulte o status e os detalhes dos pedidos registrados na sua conta.
           </p>
         </div>
         <Link href="/catalogo" className={buttonStyles({ variant: "outline" })}>

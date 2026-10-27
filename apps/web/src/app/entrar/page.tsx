@@ -5,7 +5,6 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { getCurrentCustomer } from "@/lib/auth/session";
 import { safeRedirectPath } from "@/lib/auth/validation";
-import { isDemo } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -41,13 +40,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </>
       }
     >
-      {isDemo ? (
-        <div className="mb-4 rounded-xl border border-motta-gray-200 bg-motta-gray-50 px-3 py-2 text-[11px] leading-relaxed text-motta-gray-700">
-          <strong className="font-black text-motta-ink">Conta demo:</strong>{" "}
-          <span className="font-mono">cliente@motta.test</span> /{" "}
-          <span className="font-mono">Motta@2026!</span>
-        </div>
-      ) : null}
       <LoginForm kind="customer" next={nextPath} />
     </AuthCard>
   );

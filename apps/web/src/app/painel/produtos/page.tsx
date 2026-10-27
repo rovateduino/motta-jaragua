@@ -5,7 +5,7 @@ import { getAdminCatalogData } from "@/lib/admin-db";
 
 export const metadata: Metadata = {
   title: "Produtos e estoque",
-  description: "Gestão fictícia de produtos e estoque do painel demonstrativo.",
+  description: "Gerencie os produtos, preços e estoque da loja.",
   robots: { index: false, follow: false },
 };
 

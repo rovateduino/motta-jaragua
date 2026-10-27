@@ -44,5 +44,11 @@ export default async function CheckoutPage() {
 
   const pickupSlots = await listPickupSlots(settings.storeId);
 
-  return <CheckoutView rules={settings} pickupSlots={pickupSlots} />;
+  return (
+    <CheckoutView
+      rules={settings}
+      pickupSlots={pickupSlots}
+      storeLocation={{ city: settings.city, state: settings.state }}
+    />
+  );
 }

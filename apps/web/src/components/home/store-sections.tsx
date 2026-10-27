@@ -35,7 +35,7 @@ export function HomeStoreSections({
           id="ofertas-title"
           eyebrow="Economize mais"
           title="Ofertas imperdíveis"
-          description="Ofertas fictícias com preço promocional para você testar a experiência completa de compra."
+          description="Confira os produtos com preços promocionais desta semana."
           action={
             <Link
               href="/ofertas"

@@ -21,6 +21,13 @@ import { productMeta } from "./catalog-meta";
 export interface StoreSettings {
   readonly storeId: string;
   readonly storeName: string;
+  readonly addressLine: string;
+  readonly district: string;
+  readonly city: string;
+  readonly state: string;
+  readonly zipCode: string;
+  readonly phone: string;
+  readonly hours: string;
   readonly deliveryEnabled: boolean;
   readonly pickupEnabled: boolean;
   readonly deliveryFeeCents: number;
@@ -83,6 +90,7 @@ export interface OrderView extends OrderSummaryView {
 
 const SETTING_KEYS = {
   storeName: "store.name",
+  storeHours: "store.hours",
   deliveryEnabled: "delivery.enabled",
   pickupEnabled: "pickup.enabled",
   deliveryFeeCents: "delivery.feeCents",
@@ -120,7 +128,7 @@ function readJsonBoolean(value: unknown, fallback: boolean): boolean {
 }
 
 function readJsonString(value: unknown, fallback: string): string {
-  return typeof value === "string" && value.trim() ? value : fallback;
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
 /**
@@ -134,7 +142,16 @@ export const getStoreSettings = cache(async (): Promise<StoreSettings | null> =>
   const store = await prisma.store.findFirst({
     where: { active: true },
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      addressLine: true,
+      district: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      phone: true,
+    },
   });
   if (!store) return null;
 
@@ -147,6 +164,13 @@ export const getStoreSettings = cache(async (): Promise<StoreSettings | null> =>
   return {
     storeId: store.id,
     storeName: readJsonString(settings.get(SETTING_KEYS.storeName), store.name),
+    addressLine: store.addressLine,
+    district: store.district,
+    city: store.city,
+    state: store.state,
+    zipCode: store.zipCode,
+    phone: store.phone ?? "",
+    hours: readJsonString(settings.get(SETTING_KEYS.storeHours), ""),
     deliveryEnabled: readJsonBoolean(settings.get(SETTING_KEYS.deliveryEnabled), true),
     pickupEnabled: readJsonBoolean(settings.get(SETTING_KEYS.pickupEnabled), true),
     deliveryFeeCents: readJsonNumber(settings.get(SETTING_KEYS.deliveryFeeCents), 0),

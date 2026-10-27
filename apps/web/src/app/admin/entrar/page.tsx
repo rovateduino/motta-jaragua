@@ -6,7 +6,6 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { safeRedirectPath } from "@/lib/auth/validation";
-import { isDemo } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Entrar no painel",
@@ -58,17 +57,6 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
           <AuthAlert tone="info">
             O cadastro inicial já foi concluído. Solicite um convite a um administrador.
           </AuthAlert>
-        ) : null}
-
-        {isDemo ? (
-          <div className="rounded-xl border border-motta-gray-200 bg-motta-gray-50 px-3 py-2.5 text-[11px] leading-relaxed text-motta-gray-700">
-            <strong className="block font-black text-motta-ink">Contas demo</strong>
-            <span className="font-mono">admin@motta.test</span> /{" "}
-            <span className="font-mono">Motta@2026!</span> — acesso completo
-            <br />
-            <span className="font-mono">atendimento@motta.test</span> /{" "}
-            <span className="font-mono">Motta@2026!</span> — perfil SUPPORT
-          </div>
         ) : null}
 
         <LoginForm kind="admin" next={nextPath} />

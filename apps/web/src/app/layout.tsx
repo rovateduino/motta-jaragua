@@ -3,7 +3,8 @@ import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { AppShell } from "@/components/app-shell";
 import { getStoreCatalog } from "@/lib/catalog-db";
-import { appMode, appName, appUrl, isDemo } from "@/lib/env";
+import { getStoreSettings } from "@/lib/orders-db";
+import { appName, appUrl, isDemo } from "@/lib/env";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     template: `%s • ${appName}`,
   },
   description:
-    "Compre online no Mercado Motta Jaraguá: ofertas, departamentos, entrega e retirada. Ambiente de demonstração com dados fictícios.",
+    "Compre online no Mercado Motta Jaraguá: ofertas, departamentos, entrega e retirada.",
   applicationName: appName,
   robots: isDemo ? { index: false, follow: false } : { index: true, follow: true },
   openGraph: {
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
     siteName: appName,
     title: `${appName} — Perto de você`,
     description:
-      "Ofertas e departamentos do Mercado Motta Jaraguá em um só lugar. Ambiente de demonstração.",
+      "Ofertas e departamentos do Mercado Motta Jaraguá em um só lugar.",
   },
 };
 
@@ -37,7 +38,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  const catalog = await getStoreCatalog();
+  const [catalog, storeSettings] = await Promise.all([
+    getStoreCatalog(),
+    getStoreSettings(),
+  ]);
 
   return (
     <html lang="pt-BR">
@@ -46,7 +50,7 @@ export default async function RootLayout({
           Ir para o conteúdo
         </a>
         <CartProvider products={catalog?.products ?? null}>
-          <AppShell demo={appMode === "demo"}>{children}</AppShell>
+          <AppShell storeSettings={storeSettings}>{children}</AppShell>
         </CartProvider>
       </body>
     </html>
