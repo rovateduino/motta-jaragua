@@ -262,12 +262,16 @@ async function main(): Promise<void> {
       where: { storeId_productId: { storeId: store.id, productId: row.id } },
       update: {
         onHand: toQuantityMilli(product.stock),
+        // O seed de demonstração recria o estoque do zero; reservas de pedidos
+        // antigos não devem sobrar (reserved > onHand geraria saldo negativo).
+        reserved: 0,
         reorderPoint: toQuantityMilli(product.reorderPoint ?? 5),
       },
       create: {
         storeId: store.id,
         productId: row.id,
         onHand: toQuantityMilli(product.stock),
+        reserved: 0,
         reorderPoint: toQuantityMilli(product.reorderPoint ?? 5),
       },
     });

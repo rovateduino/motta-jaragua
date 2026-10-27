@@ -182,18 +182,22 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const revenueOrders = orders.filter((order) => isRevenueStatus(order.status));
   const revenueCents = revenueOrders.reduce((sum, order) => sum + order.totalCents, 0);
   const lowStockProducts = inventory
-    .filter((entry) => entry.onHand - entry.reserved <= LOW_STOCK_THRESHOLD_MILLI)
-    .sort((left, right) =>
-      left.onHand - left.reserved - (right.onHand - right.reserved),
-    )
-    .slice(0, 6)
+    // Reservas órfãs (reserved > onHand) não podem derrubar o painel: o
+    // disponível é limitado a zero até a conciliação da reserva.
     .map((entry) => ({
+      entry,
+      availableMilli: Math.max(0, entry.onHand - entry.reserved),
+    }))
+    .filter(({ availableMilli }) => availableMilli <= LOW_STOCK_THRESHOLD_MILLI)
+    .sort((left, right) => left.availableMilli - right.availableMilli)
+    .slice(0, 6)
+    .map(({ entry, availableMilli }) => ({
       id: entry.product.id,
       sku: entry.product.sku,
       name: entry.product.name,
       slug: entry.product.slug,
       unit: entry.product.unit,
-      stockQuantityMilli: entry.onHand - entry.reserved,
+      stockQuantityMilli: availableMilli,
       emoji: productMeta[entry.product.slug]?.emoji ?? "🛒",
     }));
   return {
@@ -316,12 +320,18 @@ export async function getAdminReportData(periodDays: 7 | 30 | 90): Promise<Admin
     };
   }).filter((promotion) => promotion.orderCount > 0);
   const stockoutProducts = inventory
-    .filter((entry) => entry.onHand - entry.reserved <= entry.reorderPoint)
+    // Mesma blindagem do dashboard: reserva órfã não pode gerar quantidade
+    // negativa (formatQuantity lança DomainError e a página quebraria).
     .map((entry) => ({
+      entry,
+      availableMilli: Math.max(0, entry.onHand - entry.reserved),
+    }))
+    .filter(({ entry, availableMilli }) => availableMilli <= entry.reorderPoint)
+    .map(({ entry, availableMilli }) => ({
       id: entry.product.id,
       name: entry.product.name,
       unit: entry.product.unit,
-      stockQuantityMilli: entry.onHand - entry.reserved,
+      stockQuantityMilli: availableMilli,
       minQuantityMilli: entry.reorderPoint,
     }));
 
@@ -334,7 +344,7 @@ export async function getAdminReportData(periodDays: 7 | 30 | 90): Promise<Admin
     cancellationRate: orders.length ? Math.round((cancellationCount / orders.length) * 100) : 0,
     topProducts: aggregateProducts(orders),
     stockoutProducts,
-    lowStockCount: inventory.filter((entry) => entry.onHand - entry.reserved <= LOW_STOCK_THRESHOLD_MILLI).length,
+    lowStockCount: inventory.filter((entry) => Math.max(0, entry.onHand - entry.reserved) <= LOW_STOCK_THRESHOLD_MILLI).length,
     averageSeparationMinutes: separationMinutes.length
       ? Math.round(separationMinutes.reduce((sum, value) => sum + value, 0) / separationMinutes.length)
       : null,

@@ -329,7 +329,7 @@ export async function getAdminShellMetrics() {
   return {
     storeName: settings?.storeName ?? store.name,
     lowStockCount: inventory.filter(
-      (entry) => entry.onHand - entry.reserved <= LOW_STOCK_THRESHOLD_MILLI,
+      (entry) => Math.max(0, entry.onHand - entry.reserved) <= LOW_STOCK_THRESHOLD_MILLI,
     ).length,
     activePromotionCount,
   };
