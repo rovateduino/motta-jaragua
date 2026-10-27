@@ -1,0 +1,37 @@
+{
+  "name": "motta-jaragua",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de e-commerce do Mercado Motta Jaraguá",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @motta/web",
+    "build": "npm run build -w @motta/web",
+    "start": "npm run start -w @motta/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:watch": "npm run test:watch -w @motta/domain",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:local": "node scripts/setup-test-db.ts && npx playwright test",
+    "setup-test-db": "node scripts/setup-test-db.ts",
+    "db:validate": "npm run db:validate -w @motta/db",
+    "db:generate": "npm run db:generate -w @motta/db",
+    "db:migrate": "npm run db:migrate -w @motta/db",
+    "db:seed": "npm run db:seed -w @motta/db",
+    "db:studio": "npm run db:studio -w @motta/db",
+    "postinstall": "npm run db:generate"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "dotenv-cli": "8.0.0",
+    "typescript": "5.9.3"
+  }
+}

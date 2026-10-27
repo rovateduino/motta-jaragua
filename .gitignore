@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# next / build
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# tests
+coverage/
+playwright-report/
+test-results/
+
+# prisma
+packages/db/prisma/*.db
+packages/db/prisma/*.db-journal
+
+# misc
+*.zip
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vercel/
+.idea/
+.vscode/
+
+# Arquivos sensíveis
+API KEY MOTTA.txt
+neon-setup-prompt.md
+*.zip

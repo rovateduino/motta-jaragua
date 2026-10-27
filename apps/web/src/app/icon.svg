@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mercado Motta Jaraguá">
+  <rect width="64" height="64" rx="14" fill="#D71920"/>
+  <path d="M12 46V19h8l12 15 12-15h8v27h-8V31L32 44 20 31v15z" fill="#FFFFFF"/>
+  <rect x="12" y="50" width="40" height="4" rx="2" fill="#FFDF33"/>
+</svg>
