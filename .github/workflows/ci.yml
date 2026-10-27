@@ -14,7 +14,10 @@ jobs:
     name: Lint, typecheck, test e build
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://motta:motta@localhost:5432/motta?schema=public
+      # Sem DATABASE_URL: o catálogo e as configurações da loja degradam para
+      # "manutenção" quando o banco não está configurado, então build e testes
+      # rodam sem Postgres. As URLs exigidas pelo schema entram só no passo de
+      # validação do Prisma.
       APP_MODE: demo
     steps:
       - name: Checkout
@@ -26,13 +29,15 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Criar .env de CI
-        run: cp .env.example .env
-
       - name: Instalar dependências
         run: npm ci
 
       - name: Prisma validate
+        env:
+          # `prisma validate` não conecta ao banco, mas exige as variáveis
+          # referenciadas no schema (url e directUrl).
+          DATABASE_URL: postgresql://motta:motta@localhost:5432/motta?schema=public
+          DIRECT_URL: postgresql://motta:motta@localhost:5432/motta?schema=public
         run: npm run db:validate
 
       - name: Typecheck

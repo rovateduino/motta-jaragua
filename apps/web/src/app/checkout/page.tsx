@@ -4,6 +4,8 @@ import { buttonStyles, Card, CardBody, Container } from "@motta/ui";
 import { CheckoutView } from "@/components/checkout/checkout-view";
 import { getStoreSettings, listPickupSlots } from "@/lib/orders-db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Finalizar pedido",
   description:
