@@ -207,7 +207,11 @@ export async function getAdminDeliveryData(): Promise<AdminDeliveryData> {
   const [settings, orders] = await Promise.all([
     getStoreSettings(),
     prisma.order.findMany({
-      where: { storeId: store.id, fulfillmentType: "DELIVERY" },
+      where: {
+        storeId: store.id,
+        fulfillmentType: "DELIVERY",
+        deletedAt: null,
+      },
       orderBy: { createdAt: "desc" },
       take: 200,
       select: {

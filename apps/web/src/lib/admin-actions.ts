@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@motta/db";
-import { assertTransition, DomainError, ORDER_STATUSES } from "@motta/domain";
+import {
+  assertTransition,
+  canTransition,
+  DomainError,
+  isTerminal,
+  ORDER_STATUSES,
+} from "@motta/domain";
 import { requireAdminAction } from "@/lib/auth/session";
 
 export type AdminActionResult =
@@ -685,6 +691,210 @@ export async function updateAdminOrderStatus(input: unknown): Promise<AdminActio
   } catch (error) {
     return actionFailure(error, "Não foi possível atualizar o status.");
   }
+}
+
+/**
+ * Exclusão lógica (soft delete) de um pedido.
+ *
+ * O registro, os itens, o histórico de status e os documentos fiscais continuam
+ * no banco; `deletedAt` apenas tira o pedido da fila operacional. Para não
+ * esconder pedidos em andamento, a exclusão cancela antes os pedidos que
+ * aceitam essa transição, liberando a reserva de estoque. Pedidos que já
+ * passaram para a entrega não podem ser cancelados e precisam ser finalizados
+ * pelo fluxo normal.
+ */
+async function softDeleteOrderRecord(
+  adminId: string,
+  storeId: string,
+  orderId: string,
+) {
+  return prisma.$transaction(async (transaction) => {
+    const order = await transaction.order.findFirst({
+      where: { id: orderId, storeId },
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        deletedAt: true,
+        items: {
+          select: { productId: true, quantity: true, productNameSnapshot: true },
+        },
+      },
+    });
+    if (!order) throw new AdminActionError("Pedido não encontrado.");
+    if (order.deletedAt) {
+      throw new AdminActionError(`O pedido ${order.orderNumber} já foi excluído.`);
+    }
+
+    let finalStatus = order.status;
+
+    if (!isTerminal(order.status)) {
+      if (!canTransition(order.status, "CANCELLED")) {
+        throw new AdminActionError(
+          `O pedido ${order.orderNumber} já saiu para entrega e não pode ser excluído. Finalize a entrega antes.`,
+        );
+      }
+
+      const cancelled = await transaction.order.updateMany({
+        where: { id: order.id, status: order.status, deletedAt: null },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      });
+      if (cancelled.count !== 1) {
+        throw new AdminActionError(
+          `O pedido ${order.orderNumber} foi atualizado por outra operação. Recarregue a página.`,
+        );
+      }
+
+      // Mesma liberação de reserva usada ao cancelar pelo detalhe do pedido.
+      for (const item of order.items) {
+        if (!item.productId) continue;
+        const inventory = await transaction.inventory.findUnique({
+          where: {
+            storeId_productId: {
+              storeId,
+              productId: item.productId,
+            },
+          },
+          select: { id: true },
+        });
+        if (!inventory) {
+          throw new AdminActionError(
+            `Estoque não encontrado para ${item.productNameSnapshot}.`,
+          );
+        }
+
+        const affected = await transaction.$executeRaw`
+          UPDATE "Inventory"
+          SET "reserved" = "reserved" - ${item.quantity},
+              "updatedAt" = ${new Date()}
+          WHERE "id" = ${inventory.id}
+            AND "reserved" >= ${item.quantity}
+        `;
+        if (affected !== 1) {
+          throw new AdminActionError(
+            `Não foi possível liberar a reserva de ${item.productNameSnapshot}.`,
+          );
+        }
+        await transaction.inventoryMovement.create({
+          data: {
+            inventoryId: inventory.id,
+            delta: item.quantity,
+            reason: "RELEASE",
+            reference: order.orderNumber,
+            actorAdminId: adminId,
+            note: "Liberação de reserva ao excluir o pedido.",
+          },
+        });
+      }
+
+      await transaction.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          fromStatus: order.status,
+          toStatus: "CANCELLED",
+          changedByAdminId: adminId,
+          note: "Cancelado automaticamente pela exclusão em massa.",
+        },
+      });
+
+      finalStatus = "CANCELLED";
+    }
+
+    const deletedAt = new Date();
+    const changed = await transaction.order.updateMany({
+      where: { id: order.id, deletedAt: null },
+      data: { deletedAt },
+    });
+    if (changed.count !== 1) {
+      throw new AdminActionError(
+        `O pedido ${order.orderNumber} foi atualizado por outra operação. Recarregue a página.`,
+      );
+    }
+
+    await transaction.auditLog.create({
+      data: {
+        actorType: "ADMIN",
+        actorAdminId: adminId,
+        action: "order.deleted",
+        entityType: "Order",
+        entityId: order.id,
+        before: { orderNumber: order.orderNumber, status: order.status },
+        after: {
+          status: finalStatus,
+          deletedAt: deletedAt.toISOString(),
+          softDelete: true,
+        },
+      },
+    });
+
+    return order;
+  });
+}
+
+/**
+ * Exclusão em massa de pedidos (soft delete). Cada pedido roda na própria
+ * transação, então um pedido em andamento não impede a exclusão dos demais; a
+ * resposta informa quantos saíram e o motivo dos que ficaram.
+ */
+export async function deleteOrdersAction(ids: string[]): Promise<AdminActionResult> {
+  const admin = await requireAdminAction("orders.update");
+  const parsed = z
+    .array(z.string().trim().min(1))
+    .min(1)
+    .max(200)
+    .safeParse(ids);
+  if (!parsed.success) {
+    return { ok: false, message: "Selecione ao menos um pedido para excluir." };
+  }
+
+  const store = await prisma.store.findFirst({
+    where: { active: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!store) return { ok: false, message: "Não há uma loja ativa configurada." };
+
+  const uniqueIds = [...new Set(parsed.data)];
+  const failures: string[] = [];
+  let deleted = 0;
+
+  for (const id of uniqueIds) {
+    try {
+      await softDeleteOrderRecord(admin.id, store.id, id);
+      deleted += 1;
+    } catch (error) {
+      failures.push(
+        error instanceof AdminActionError
+          ? error.message
+          : "Falha inesperada ao excluir um dos pedidos.",
+      );
+    }
+  }
+
+  if (deleted === 0) {
+    return {
+      ok: false,
+      message: failures[0] ?? "Nenhum pedido foi excluído.",
+    };
+  }
+
+  revalidatePath("/painel");
+  revalidatePath("/painel/pedidos");
+  revalidatePath("/painel/entregas");
+
+  if (failures.length === 0) {
+    return {
+      ok: true,
+      message: `${deleted} ${deleted === 1 ? "pedido excluído" : "pedidos excluídos"} da fila. O histórico foi preservado.`,
+    };
+  }
+
+  const detail = failures.slice(0, 3).join(" ");
+  const rest = failures.length > 3 ? ` (+${failures.length - 3} outro(s))` : "";
+  return {
+    ok: false,
+    message: `${deleted} de ${uniqueIds.length} excluídos. ${detail}${rest}`,
+  };
 }
 
 export async function saveAdminStoreSettings(

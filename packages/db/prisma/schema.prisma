@@ -340,6 +340,9 @@ model Order {
   confirmedAt            DateTime?
   completedAt            DateTime?
   cancelledAt            DateTime?
+  /// Soft delete operacional: o pedido sai da fila do painel sem perder o
+  /// histórico fiscal, financeiro e de status.
+  deletedAt              DateTime?
 
   items                  OrderItem[]
   statusHistory          OrderStatusHistory[]
@@ -347,6 +350,7 @@ model Order {
   fiscalDocuments        FiscalDocument[]
 
   @@index([storeId, status])
+  @@index([storeId, deletedAt])
   @@index([customerId, createdAt])
   @@index([createdAt])
 }

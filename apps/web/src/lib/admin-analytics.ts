@@ -163,10 +163,14 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       where: { storeId: store.id, active: true, startsAt: { lte: now }, endsAt: { gt: now } },
     }),
     prisma.order.count({
-      where: { storeId: store.id, status: { in: [...pendingStatuses] } },
+      where: {
+        storeId: store.id,
+        deletedAt: null,
+        status: { in: [...pendingStatuses] },
+      },
     }),
     prisma.order.findMany({
-      where: { storeId: store.id },
+      where: { storeId: store.id, deletedAt: null },
       orderBy: { createdAt: "desc" },
       take: 6,
       select: {

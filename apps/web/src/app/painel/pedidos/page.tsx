@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminOrdersView } from "@/components/orders/admin-orders-view";
-import { requireAdminPermission } from "@/lib/auth/session";
+import { hasPermission, requireAdminPermission } from "@/lib/auth/session";
 import { listAdminOrders } from "@/lib/orders-db";
 
 export const metadata: Metadata = {
@@ -10,8 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminOrdersPage() {
-  await requireAdminPermission("orders.read");
+  const admin = await requireAdminPermission("orders.read");
   const orders = await listAdminOrders();
 
-  return <AdminOrdersView orders={orders} />;
+  return (
+    <AdminOrdersView
+      orders={orders}
+      canWrite={hasPermission(admin, "orders.update")}
+    />
+  );
 }

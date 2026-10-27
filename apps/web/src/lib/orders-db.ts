@@ -62,6 +62,7 @@ export interface OrderSummaryView {
 }
 
 export interface AdminOrderRowView extends OrderSummaryView {
+  readonly id: string;
   readonly contactName: string;
 }
 
@@ -399,10 +400,11 @@ export async function listAdminOrders(): Promise<AdminOrderRowView[]> {
   const storeId = await getActiveStoreId();
   if (!storeId) return [];
   const orders = await prisma.order.findMany({
-    where: { storeId },
+    where: { storeId, deletedAt: null },
     orderBy: { createdAt: "desc" },
     take: 200,
     select: {
+      id: true,
       orderNumber: true,
       status: true,
       createdAt: true,
@@ -414,6 +416,7 @@ export async function listAdminOrders(): Promise<AdminOrderRowView[]> {
   });
 
   return orders.map((order) => ({
+    id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
     createdAt: order.createdAt.toISOString(),
@@ -450,6 +453,7 @@ export const countPendingOrders = cache(async (): Promise<number> => {
   return prisma.order.count({
     where: {
       storeId,
+      deletedAt: null,
       status: { notIn: ["COMPLETED", "CANCELLED", "REFUNDED"] },
     },
   });
