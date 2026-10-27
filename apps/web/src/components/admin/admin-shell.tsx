@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  AlertTriangleIcon,
   ChartIcon,
   ClipboardListIcon,
   ExternalLinkIcon,
@@ -284,19 +283,6 @@ export function AdminShell({
             </ul>
           </nav>
         </header>
-
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 sm:px-6 lg:px-8">
-          <p className="flex items-start gap-2 text-[11px] leading-relaxed text-amber-900 sm:items-center">
-            <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" />
-            <span>
-              <strong className="font-black uppercase tracking-wide">
-                Sessão autenticada · dados do banco.
-              </strong>{" "}
-              Produtos, ofertas, pedidos e indicadores são persistidos no PostgreSQL.
-              Pagamentos e integrações externas ainda não estão conectados.
-            </span>
-          </p>
-        </div>
 
         <main id="conteudo" className="min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <div className="mx-auto w-full max-w-[1440px]">{children}</div>
