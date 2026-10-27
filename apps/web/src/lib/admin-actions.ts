@@ -22,6 +22,13 @@ const productInputSchema = z.object({
   unit: z.enum(["UNIT", "KG", "G", "L", "ML", "PACK"]),
   basePriceCents: z.number().int().positive().max(100_000_000),
   stockQuantityMilli: z.number().int().nonnegative().max(1_000_000_000),
+  imageUrl: z
+    .string()
+    .trim()
+    .max(2048)
+    .refine((value) => value === "" || /^https?:\/\/\S+$/i.test(value), {
+      message: "A URL da imagem deve começar com http:// ou https://.",
+    }),
   active: z.boolean(),
 });
 
@@ -147,6 +154,7 @@ export async function saveAdminProduct(input: unknown): Promise<AdminActionResul
             name: data.name,
             brand: data.brand || null,
             description: data.description || null,
+            imageUrl: data.imageUrl || null,
             categoryId: data.categoryId,
             unit: data.unit,
             active: data.active,
@@ -190,6 +198,7 @@ export async function saveAdminProduct(input: unknown): Promise<AdminActionResul
               sku: before.sku,
               name: before.name,
               active: before.active,
+              imageUrl: before.imageUrl,
               basePriceCents: before.prices[0]?.basePriceCents ?? null,
               stockQuantityMilli: inventory.onHand,
             },
@@ -197,6 +206,7 @@ export async function saveAdminProduct(input: unknown): Promise<AdminActionResul
               sku: data.sku,
               name: data.name,
               active: data.active,
+              imageUrl: data.imageUrl || null,
               basePriceCents: data.basePriceCents,
               stockQuantityMilli: data.stockQuantityMilli,
             },
@@ -212,6 +222,7 @@ export async function saveAdminProduct(input: unknown): Promise<AdminActionResul
           name: data.name,
           brand: data.brand || null,
           description: data.description || null,
+          imageUrl: data.imageUrl || null,
           categoryId: data.categoryId,
           unit: data.unit,
           active: data.active,
@@ -248,6 +259,7 @@ export async function saveAdminProduct(input: unknown): Promise<AdminActionResul
             sku: data.sku,
             name: data.name,
             active: data.active,
+            imageUrl: data.imageUrl || null,
             basePriceCents: data.basePriceCents,
             stockQuantityMilli: data.stockQuantityMilli,
           },
@@ -292,45 +304,117 @@ export async function setAdminProductActive(
   }
 }
 
+/**
+ * Exclusão de um produto com as regras de integridade (sem reserva e sem
+ * histórico de pedidos) e auditoria, tudo na mesma transação.
+ *
+ * É a base da exclusão individual e da exclusão em massa: a segunda reaproveita
+ * esta função por produto, de forma que cada item é atômico isoladamente.
+ */
+async function deleteProductRecord(adminId: string, productId: string) {
+  return prisma.$transaction(async (transaction) => {
+    const product = await transaction.product.findUnique({
+      where: { id: productId },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        inventory: { select: { reserved: true } },
+        _count: { select: { orderItems: true } },
+      },
+    });
+    if (!product) throw new AdminActionError("Produto não encontrado.");
+    if (product.inventory.some((inventory) => inventory.reserved > 0)) {
+      throw new AdminActionError(
+        `"${product.name}" tem estoque reservado e não pode ser excluído.`,
+      );
+    }
+    if (product._count.orderItems > 0) {
+      throw new AdminActionError(
+        `"${product.name}" possui histórico de pedidos; desative-o em vez de excluir.`,
+      );
+    }
+    await transaction.auditLog.create({
+      data: {
+        actorType: "ADMIN",
+        actorAdminId: adminId,
+        action: "product.deleted",
+        entityType: "Product",
+        entityId: product.id,
+        before: { name: product.name, sku: product.sku },
+      },
+    });
+    await transaction.product.delete({ where: { id: product.id } });
+    return product;
+  });
+}
+
 export async function deleteAdminProduct(productId: string): Promise<AdminActionResult> {
   const admin = await requireAdminAction("products.write");
   try {
-    const product = await prisma.$transaction(async (transaction) => {
-      const product = await transaction.product.findUnique({
-        where: { id: productId },
-        select: {
-          id: true,
-          name: true,
-          sku: true,
-          inventory: { select: { reserved: true } },
-          _count: { select: { orderItems: true } },
-        },
-      });
-      if (!product) throw new AdminActionError("Produto não encontrado.");
-      if (product.inventory.some((inventory) => inventory.reserved > 0)) {
-        throw new AdminActionError("Não é possível excluir um produto com estoque reservado.");
-      }
-      if (product._count.orderItems > 0) {
-        throw new AdminActionError("Este produto possui histórico de pedidos. Desative-o em vez de excluir.");
-      }
-      await transaction.auditLog.create({
-        data: {
-          actorType: "ADMIN",
-          actorAdminId: admin.id,
-          action: "product.deleted",
-          entityType: "Product",
-          entityId: product.id,
-          before: { name: product.name, sku: product.sku },
-        },
-      });
-      await transaction.product.delete({ where: { id: product.id } });
-      return product;
-    });
+    const product = await deleteProductRecord(admin.id, productId);
     revalidateCatalog();
     return { ok: true, message: `${product.name} foi excluído.` };
   } catch (error) {
     return actionFailure(error, "Não foi possível excluir o produto.");
   }
+}
+
+/**
+ * Exclusão em massa. Cada produto é excluído na própria transação, então um
+ * item bloqueado (reserva ou histórico de pedidos) não impede a exclusão dos
+ * demais; a resposta informa quantos saíram e o motivo dos que ficaram.
+ */
+export async function deleteProductsAction(ids: string[]): Promise<AdminActionResult> {
+  const admin = await requireAdminAction("products.write");
+  const parsed = z
+    .array(z.string().trim().min(1))
+    .min(1)
+    .max(200)
+    .safeParse(ids);
+  if (!parsed.success) {
+    return { ok: false, message: "Selecione ao menos um produto para excluir." };
+  }
+
+  const uniqueIds = [...new Set(parsed.data)];
+  const failures: string[] = [];
+  let deleted = 0;
+
+  for (const id of uniqueIds) {
+    try {
+      await deleteProductRecord(admin.id, id);
+      deleted += 1;
+    } catch (error) {
+      failures.push(
+        error instanceof AdminActionError
+          ? error.message
+          : "Falha inesperada ao excluir um dos produtos.",
+      );
+    }
+  }
+
+  if (deleted === 0) {
+    return {
+      ok: false,
+      message: failures[0] ?? "Nenhum produto foi excluído.",
+    };
+  }
+
+  revalidateCatalog();
+
+  if (failures.length === 0) {
+    return {
+      ok: true,
+      message: `${deleted} ${deleted === 1 ? "produto excluído" : "produtos excluídos"}.`,
+    };
+  }
+
+  const detail = failures.slice(0, 3).join(" ");
+  const rest = failures.length > 3 ? ` (+${failures.length - 3} outro(s))` : "";
+  return {
+    ok: false,
+    message: `${deleted} de ${uniqueIds.length} excluídos. ${detail}${rest}`,
+  };
 }
 
 export async function saveAdminPromotion(input: unknown): Promise<AdminActionResult> {

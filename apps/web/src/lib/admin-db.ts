@@ -80,6 +80,7 @@ export async function getAdminCatalogData(): Promise<{
         categorySlug: product.category.slug,
         categoryName: product.category.name,
         unit: product.unit,
+        imageUrl: product.imageUrl ?? "",
         basePriceCents: product.prices[0]?.basePriceCents ?? 0,
         stockQuantityMilli: inventory?.onHand ?? 0,
         reservedQuantityMilli: inventory?.reserved ?? 0,

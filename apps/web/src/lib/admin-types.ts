@@ -15,6 +15,7 @@ export interface AdminProductRecord {
   readonly categorySlug: string;
   readonly categoryName: string;
   readonly unit: SaleUnit;
+  readonly imageUrl: string;
   readonly basePriceCents: number;
   readonly stockQuantityMilli: number;
   readonly reservedQuantityMilli: number;
