@@ -17,7 +17,7 @@ import {
 } from "@motta/ui";
 import { useCart } from "./cart-provider";
 import { QuantityStepper } from "@/components/catalog/quantity-stepper";
-import { getMaxQuantityMilli } from "@/lib/catalog-core";
+import { getMaxQuantityMilli, resolveProductImageUrl } from "@/lib/catalog-core";
 import { demoCheckoutRules } from "@/lib/demo-content";
 
 export function CartView() {
@@ -119,6 +119,7 @@ export function CartView() {
         <ul className="space-y-3">
           {items.map((item) => {
             const maxQuantity = getMaxQuantityMilli(item.product);
+            const imageUrl = resolveProductImageUrl(item.product);
 
             return (
               <li key={item.product.id}>
@@ -129,7 +130,17 @@ export function CartView() {
                       aria-label={`Ver ${item.product.name}`}
                       className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br text-3xl sm:h-20 sm:w-20 sm:text-4xl ${item.product.imageTone}`}
                     >
-                      <span aria-hidden="true">{item.product.emoji}</span>
+                      {imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- sem serviço de storage/otimização ainda; URLs públicas externas.
+                        <img
+                          src={imageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span aria-hidden="true">{item.product.emoji}</span>
+                      )}
                     </Link>
 
                     <div className="min-w-0 flex-1">

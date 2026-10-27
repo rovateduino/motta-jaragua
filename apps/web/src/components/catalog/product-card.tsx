@@ -13,6 +13,7 @@ import {
   getStockLabel,
   isLowStock,
   isProductAvailable,
+  resolveProductImageUrl,
   type CatalogCategory,
   type PricedCatalogProduct,
 } from "@/lib/catalog-core";
@@ -33,6 +34,7 @@ export function ProductCard({
   const defaultQuantity = getDefaultQuantityMilli(product);
   const maxQuantity = getMaxQuantityMilli(product);
   const addLabel = "Adicionar";
+  const imageUrl = resolveProductImageUrl(product);
 
   return (
     <Card
@@ -43,22 +45,36 @@ export function ProductCard({
         aria-label={`Ver detalhes de ${product.name}`}
         className="relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br sm:h-40"
       >
-        <span className={`absolute inset-0 bg-gradient-to-br ${product.imageTone}`} aria-hidden="true" />
-        <span
-          aria-hidden="true"
-          className="relative text-6xl transition-transform duration-300 group-hover:scale-105 sm:text-7xl"
-        >
-          {product.emoji}
-        </span>
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- sem serviço de storage/otimização ainda; URLs públicas externas.
+          <img
+            src={imageUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <>
+            <span className={`absolute inset-0 bg-gradient-to-br ${product.imageTone}`} aria-hidden="true" />
+            <span
+              aria-hidden="true"
+              className="relative text-6xl transition-transform duration-300 group-hover:scale-105 sm:text-7xl"
+            >
+              {product.emoji}
+            </span>
+          </>
+        )}
         <span className="absolute left-3 top-3 flex flex-wrap gap-1">
           {discount !== null && discount > 0 ? (
             <Badge variant="offer">-{discount}%</Badge>
           ) : null}
           {isLowStock(product) ? <Badge variant="danger">Últimas</Badge> : null}
         </span>
-        <span className="absolute bottom-2 right-3 text-[10px] font-semibold uppercase tracking-wide text-motta-gray-500">
-          Ilustração
-        </span>
+        {imageUrl ? null : (
+          <span className="absolute bottom-2 right-3 text-[10px] font-semibold uppercase tracking-wide text-motta-gray-500">
+            Ilustração
+          </span>
+        )}
       </Link>
 
       <CardBody className="flex flex-1 flex-col gap-2">

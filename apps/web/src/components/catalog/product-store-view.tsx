@@ -16,6 +16,7 @@ import {
   hasPromotion,
   isLowStock,
   isProductAvailable,
+  resolveProductImageUrl,
   type CatalogCategory,
   type PricedCatalogProduct,
 } from "@/lib/catalog-core";
@@ -78,6 +79,7 @@ export function ProductStoreView({
 
   const category = findCategory(categories, product.categorySlug);
   const discount = getDiscountPercentage(product);
+  const imageUrl = resolveProductImageUrl(product);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -141,22 +143,34 @@ export function ProductStoreView({
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
           <div>
             <div
-              role="img"
-              aria-label={`Ilustração de ${product.name}`}
+              role={imageUrl ? undefined : "img"}
+              aria-label={imageUrl ? undefined : `Ilustração de ${product.name}`}
               className={`relative flex h-72 items-center justify-center overflow-hidden rounded-3xl border border-motta-gray-200 bg-gradient-to-br sm:h-96 ${product.imageTone}`}
             >
-              <span aria-hidden="true" className="text-[9rem] leading-none sm:text-[12rem]">
-                {product.emoji}
-              </span>
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- sem serviço de storage/otimização ainda; URLs públicas externas.
+                <img
+                  src={imageUrl}
+                  alt={product.name}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span aria-hidden="true" className="text-[9rem] leading-none sm:text-[12rem]">
+                  {product.emoji}
+                </span>
+              )}
               <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                 {discount !== null && discount > 0 ? (
                   <Badge variant="offer">-{discount}%</Badge>
                 ) : null}
                 {isLowStock(product) ? <Badge variant="danger">Últimas unidades</Badge> : null}
               </div>
-              <span className="absolute bottom-3 right-4 text-[10px] font-semibold uppercase tracking-wide text-motta-gray-500">
-                Ilustração fictícia
-              </span>
+              {imageUrl ? null : (
+                <span className="absolute bottom-3 right-4 text-[10px] font-semibold uppercase tracking-wide text-motta-gray-500">
+                  Ilustração fictícia
+                </span>
+              )}
             </div>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">

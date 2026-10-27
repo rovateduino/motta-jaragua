@@ -38,7 +38,20 @@ export interface CatalogProduct {
   readonly minQuantityMilli: number;
   readonly emoji: string;
   readonly imageTone: string;
+  /** Foto real do produto (URL pública); ausente enquanto não houver imagem. */
+  readonly imageUrl?: string;
   readonly popularity: number;
+}
+
+/**
+ * URL da foto real do produto, quando cadastrada. Só aceita http(s): valores
+ * legados (emoji ou texto livre) caem no fallback ilustrado dos componentes.
+ */
+export function resolveProductImageUrl(
+  product: Pick<CatalogProduct, "imageUrl">,
+): string | null {
+  const url = product.imageUrl?.trim();
+  return url && /^https?:\/\//i.test(url) ? url : null;
 }
 
 export interface PricedCatalogProduct extends CatalogProduct {

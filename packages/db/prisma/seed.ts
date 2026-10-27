@@ -38,6 +38,7 @@ interface ProductSeed {
   stock: number;
   reorderPoint?: number;
   brand?: string;
+  imageUrl?: string;
 }
 
 interface PromotionSeed {
@@ -60,42 +61,51 @@ const categories: CategorySeed[] = [
   { slug: "pet-shop", name: "Pet shop", icon: "🐶", sortOrder: 10 },
 ];
 
+/**
+ * Foto pública (Pexels) usada como imagem real do produto no catálogo demo.
+ * Sem serviço de storage ainda: são URLs externas, estáveis e otimizadas na
+ * origem (`w=800`).
+ */
+function productPhoto(id: string): string {
+  return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=800`;
+}
+
 const products: ProductSeed[] = [
-  { sku: "ARR-001", name: "Arroz Tipo 1 5kg", slug: "arroz-tipo-1-5kg", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 2490, stock: 48, reorderPoint: 12 },
-  { sku: "FEI-001", name: "Feijão Carioca 1kg", slug: "feijao-carioca-1kg", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 790, stock: 60, reorderPoint: 15 },
-  { sku: "OLE-001", name: "Óleo de Soja 900ml", slug: "oleo-de-soja-900ml", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 649, stock: 72, reorderPoint: 18 },
-  { sku: "MAC-001", name: "Macarrão Espaguete 500g", slug: "macarrao-espaguete-500g", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 429, stock: 90, reorderPoint: 20 },
-  { sku: "CAF-001", name: "Café Torrado e Moído 500g", slug: "cafe-torrado-e-moido-500g", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 1890, stock: 35, reorderPoint: 10 },
+  { sku: "ARR-001", name: "Arroz Tipo 1 5kg", slug: "arroz-tipo-1-5kg", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 2490, stock: 48, reorderPoint: 12, imageUrl: productPhoto("6544376") },
+  { sku: "FEI-001", name: "Feijão Carioca 1kg", slug: "feijao-carioca-1kg", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 790, stock: 60, reorderPoint: 15, imageUrl: productPhoto("35553032") },
+  { sku: "OLE-001", name: "Óleo de Soja 900ml", slug: "oleo-de-soja-900ml", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 649, stock: 72, reorderPoint: 18, imageUrl: productPhoto("4910159") },
+  { sku: "MAC-001", name: "Macarrão Espaguete 500g", slug: "macarrao-espaguete-500g", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 429, stock: 90, reorderPoint: 20, imageUrl: productPhoto("5531093") },
+  { sku: "CAF-001", name: "Café Torrado e Moído 500g", slug: "cafe-torrado-e-moido-500g", categorySlug: "mercearia", unit: ProductUnit.UNIT, priceCents: 1890, stock: 35, reorderPoint: 10, imageUrl: productPhoto("16682442") },
 
-  { sku: "BAN-001", name: "Banana Prata", slug: "banana-prata", categorySlug: "hortifruti", unit: ProductUnit.KG, priceCents: 599, stock: 80, reorderPoint: 20 },
-  { sku: "TOM-001", name: "Tomate", slug: "tomate", categorySlug: "hortifruti", unit: ProductUnit.KG, priceCents: 749, stock: 45, reorderPoint: 15 },
-  { sku: "BAT-001", name: "Batata Inglesa", slug: "batata-inglesa", categorySlug: "hortifruti", unit: ProductUnit.KG, priceCents: 499, stock: 70, reorderPoint: 20 },
-  { sku: "ALC-001", name: "Alface Crespa", slug: "alface-crespa", categorySlug: "hortifruti", unit: ProductUnit.UNIT, priceCents: 299, stock: 25, reorderPoint: 10 },
+  { sku: "BAN-001", name: "Banana Prata", slug: "banana-prata", categorySlug: "hortifruti", unit: ProductUnit.KG, priceCents: 599, stock: 80, reorderPoint: 20, imageUrl: productPhoto("31558745") },
+  { sku: "TOM-001", name: "Tomate", slug: "tomate", categorySlug: "hortifruti", unit: ProductUnit.KG, priceCents: 749, stock: 45, reorderPoint: 15, imageUrl: productPhoto("38990977") },
+  { sku: "BAT-001", name: "Batata Inglesa", slug: "batata-inglesa", categorySlug: "hortifruti", unit: ProductUnit.KG, priceCents: 499, stock: 70, reorderPoint: 20, imageUrl: productPhoto("36400786") },
+  { sku: "ALC-001", name: "Alface Crespa", slug: "alface-crespa", categorySlug: "hortifruti", unit: ProductUnit.UNIT, priceCents: 299, stock: 25, reorderPoint: 10, imageUrl: productPhoto("28524414") },
 
-  { sku: "PAT-001", name: "Picanha Bovina", slug: "picanha-bovina", categorySlug: "acougue-e-aves", unit: ProductUnit.KG, priceCents: 8990, stock: 18, reorderPoint: 6 },
-  { sku: "FRA-001", name: "Frango Inteiro", slug: "frango-inteiro", categorySlug: "acougue-e-aves", unit: ProductUnit.KG, priceCents: 1290, stock: 40, reorderPoint: 12 },
-  { sku: "LIN-001", name: "Linguiça Toscana", slug: "linguica-toscana", categorySlug: "acougue-e-aves", unit: ProductUnit.KG, priceCents: 2190, stock: 22, reorderPoint: 8 },
+  { sku: "PAT-001", name: "Picanha Bovina", slug: "picanha-bovina", categorySlug: "acougue-e-aves", unit: ProductUnit.KG, priceCents: 8990, stock: 18, reorderPoint: 6, imageUrl: productPhoto("28292008") },
+  { sku: "FRA-001", name: "Frango Inteiro", slug: "frango-inteiro", categorySlug: "acougue-e-aves", unit: ProductUnit.KG, priceCents: 1290, stock: 40, reorderPoint: 12, imageUrl: productPhoto("13524831") },
+  { sku: "LIN-001", name: "Linguiça Toscana", slug: "linguica-toscana", categorySlug: "acougue-e-aves", unit: ProductUnit.KG, priceCents: 2190, stock: 22, reorderPoint: 8, imageUrl: productPhoto("7140429") },
 
-  { sku: "PAO-001", name: "Pão Francês", slug: "pao-frances", categorySlug: "padaria", unit: ProductUnit.KG, priceCents: 1290, stock: 30, reorderPoint: 10 },
-  { sku: "BOL-001", name: "Bolo de Cenoura 400g", slug: "bolo-de-cenoura-400g", categorySlug: "padaria", unit: ProductUnit.UNIT, priceCents: 1590, stock: 12, reorderPoint: 5 },
+  { sku: "PAO-001", name: "Pão Francês", slug: "pao-frances", categorySlug: "padaria", unit: ProductUnit.KG, priceCents: 1290, stock: 30, reorderPoint: 10, imageUrl: productPhoto("8599600") },
+  { sku: "BOL-001", name: "Bolo de Cenoura 400g", slug: "bolo-de-cenoura-400g", categorySlug: "padaria", unit: ProductUnit.UNIT, priceCents: 1590, stock: 12, reorderPoint: 5, imageUrl: productPhoto("33759172") },
 
-  { sku: "LEI-001", name: "Leite Integral 1L", slug: "leite-integral-1l", categorySlug: "laticinios-e-frios", unit: ProductUnit.UNIT, priceCents: 549, stock: 96, reorderPoint: 24 },
-  { sku: "QUE-001", name: "Queijo Mussarela", slug: "queijo-mussarela", categorySlug: "laticinios-e-frios", unit: ProductUnit.KG, priceCents: 4590, stock: 15, reorderPoint: 6 },
-  { sku: "MAN-001", name: "Manteiga 200g", slug: "manteiga-200g", categorySlug: "laticinios-e-frios", unit: ProductUnit.UNIT, priceCents: 990, stock: 28, reorderPoint: 10 },
+  { sku: "LEI-001", name: "Leite Integral 1L", slug: "leite-integral-1l", categorySlug: "laticinios-e-frios", unit: ProductUnit.UNIT, priceCents: 549, stock: 96, reorderPoint: 24, imageUrl: productPhoto("28985887") },
+  { sku: "QUE-001", name: "Queijo Mussarela", slug: "queijo-mussarela", categorySlug: "laticinios-e-frios", unit: ProductUnit.KG, priceCents: 4590, stock: 15, reorderPoint: 6, imageUrl: productPhoto("36570893") },
+  { sku: "MAN-001", name: "Manteiga 200g", slug: "manteiga-200g", categorySlug: "laticinios-e-frios", unit: ProductUnit.UNIT, priceCents: 990, stock: 28, reorderPoint: 10, imageUrl: productPhoto("7966386") },
 
-  { sku: "REF-001", name: "Refrigerante Cola 2L", slug: "refrigerante-cola-2l", categorySlug: "bebidas", unit: ProductUnit.UNIT, priceCents: 899, stock: 54, reorderPoint: 18 },
-  { sku: "SUC-001", name: "Suco de Uva Integral 1L", slug: "suco-de-uva-integral-1l", categorySlug: "bebidas", unit: ProductUnit.UNIT, priceCents: 1290, stock: 26, reorderPoint: 10 },
+  { sku: "REF-001", name: "Refrigerante Cola 2L", slug: "refrigerante-cola-2l", categorySlug: "bebidas", unit: ProductUnit.UNIT, priceCents: 899, stock: 54, reorderPoint: 18, imageUrl: productPhoto("9220520") },
+  { sku: "SUC-001", name: "Suco de Uva Integral 1L", slug: "suco-de-uva-integral-1l", categorySlug: "bebidas", unit: ProductUnit.UNIT, priceCents: 1290, stock: 26, reorderPoint: 10, imageUrl: productPhoto("8215113") },
 
-  { sku: "DET-001", name: "Detergente 500ml", slug: "detergente-500ml", categorySlug: "limpeza", unit: ProductUnit.UNIT, priceCents: 299, stock: 110, reorderPoint: 30 },
-  { sku: "SAB-001", name: "Sabão em Pó 1kg", slug: "sabao-em-po-1kg", categorySlug: "limpeza", unit: ProductUnit.UNIT, priceCents: 1190, stock: 42, reorderPoint: 12 },
+  { sku: "DET-001", name: "Detergente 500ml", slug: "detergente-500ml", categorySlug: "limpeza", unit: ProductUnit.UNIT, priceCents: 299, stock: 110, reorderPoint: 30, imageUrl: productPhoto("10566513") },
+  { sku: "SAB-001", name: "Sabão em Pó 1kg", slug: "sabao-em-po-1kg", categorySlug: "limpeza", unit: ProductUnit.UNIT, priceCents: 1190, stock: 42, reorderPoint: 12, imageUrl: productPhoto("2927523") },
 
-  { sku: "PAP-001", name: "Papel Higiênico 12 rolos", slug: "papel-higienico-12-rolos", categorySlug: "higiene-pessoal", unit: ProductUnit.UNIT, priceCents: 1890, stock: 33, reorderPoint: 10 },
-  { sku: "SHA-001", name: "Shampoo 350ml", slug: "shampoo-350ml", categorySlug: "higiene-pessoal", unit: ProductUnit.UNIT, priceCents: 1590, stock: 24, reorderPoint: 8 },
+  { sku: "PAP-001", name: "Papel Higiênico 12 rolos", slug: "papel-higienico-12-rolos", categorySlug: "higiene-pessoal", unit: ProductUnit.UNIT, priceCents: 1890, stock: 33, reorderPoint: 10, imageUrl: productPhoto("3958205") },
+  { sku: "SHA-001", name: "Shampoo 350ml", slug: "shampoo-350ml", categorySlug: "higiene-pessoal", unit: ProductUnit.UNIT, priceCents: 1590, stock: 24, reorderPoint: 8, imageUrl: productPhoto("23349900") },
 
-  { sku: "PIZ-001", name: "Pizza Congelada 460g", slug: "pizza-congelada-460g", categorySlug: "congelados", unit: ProductUnit.UNIT, priceCents: 1790, stock: 20, reorderPoint: 8 },
-  { sku: "ERV-001", name: "Ervilha Congelada 400g", slug: "ervilha-congelada-400g", categorySlug: "congelados", unit: ProductUnit.UNIT, priceCents: 899, stock: 14, reorderPoint: 6 },
+  { sku: "PIZ-001", name: "Pizza Congelada 460g", slug: "pizza-congelada-460g", categorySlug: "congelados", unit: ProductUnit.UNIT, priceCents: 1790, stock: 20, reorderPoint: 8, imageUrl: productPhoto("6068717") },
+  { sku: "ERV-001", name: "Ervilha Congelada 400g", slug: "ervilha-congelada-400g", categorySlug: "congelados", unit: ProductUnit.UNIT, priceCents: 899, stock: 14, reorderPoint: 6, imageUrl: productPhoto("5125097") },
 
-  { sku: "RAC-001", name: "Ração para Cães 3kg", slug: "racao-para-caes-3kg", categorySlug: "pet-shop", unit: ProductUnit.UNIT, priceCents: 4590, stock: 8, reorderPoint: 4 },
+  { sku: "RAC-001", name: "Ração para Cães 3kg", slug: "racao-para-caes-3kg", categorySlug: "pet-shop", unit: ProductUnit.UNIT, priceCents: 4590, stock: 8, reorderPoint: 4, imageUrl: productPhoto("8434635") },
 ];
 
 const promotions: PromotionSeed[] = [
@@ -225,6 +235,7 @@ async function main(): Promise<void> {
         categoryId,
         unit: product.unit,
         weighsVariable: product.unit === ProductUnit.KG,
+        imageUrl: product.imageUrl ?? null,
         active: true,
       },
       create: {
@@ -233,6 +244,7 @@ async function main(): Promise<void> {
         slug: product.slug,
         description: "Produto fictício para demonstração.",
         brand: product.brand ?? null,
+        imageUrl: product.imageUrl ?? null,
         categoryId,
         unit: product.unit,
         weighsVariable: product.unit === ProductUnit.KG,

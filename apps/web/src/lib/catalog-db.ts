@@ -59,6 +59,7 @@ interface ProductRow {
   readonly slug: string;
   readonly description: string | null;
   readonly brand: string | null;
+  readonly imageUrl: string | null;
   readonly unit: SaleUnit;
   readonly category: CategoryRow;
   readonly prices: ReadonlyArray<{ readonly basePriceCents: number }>;
@@ -159,6 +160,7 @@ function toCatalogProduct(row: ProductRow, now: Date): PricedCatalogProduct {
     minQuantityMilli: step,
     emoji: meta?.emoji ?? row.category.icon ?? "🛒",
     imageTone: meta?.imageTone ?? "from-stone-100 to-white",
+    ...(row.imageUrl ? { imageUrl: row.imageUrl } : {}),
     popularity: meta?.popularity ?? 0,
   };
 
