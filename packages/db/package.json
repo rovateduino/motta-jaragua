@@ -10,12 +10,12 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "db:validate": "dotenv -e ../../.env -- prisma validate",
-    "db:generate": "dotenv -e ../../.env -- prisma generate",
-    "db:migrate": "dotenv -e ../../.env -- prisma migrate deploy",
-    "db:migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
-    "db:seed": "dotenv -e ../../.env -- prisma db seed",
-    "db:studio": "dotenv -e ../../.env -- prisma studio"
+    "db:validate": "prisma validate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
