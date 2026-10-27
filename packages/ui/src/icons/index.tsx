@@ -326,3 +326,12 @@ export function LockIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function PowerIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 3v9" />
+      <path d="M6.4 6.4a8 8 0 1 0 11.2 0" />
+    </IconBase>
+  );
+}

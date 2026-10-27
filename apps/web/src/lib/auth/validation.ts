@@ -64,6 +64,21 @@ export const createAdminSchema = z.object({
   roleIds: z.array(z.string().min(1)).min(1, "Selecione ao menos um papel."),
 });
 
+export const adminIdsSchema = z
+  .array(z.string().trim().min(1))
+  .min(1)
+  .max(200);
+
+export const updateAdminRolesSchema = z.object({
+  id: z.string().trim().min(1),
+  roleIds: z.array(z.string().min(1)).min(1, "Selecione ao menos um papel."),
+});
+
+export const setAdminActiveSchema = z.object({
+  id: z.string().trim().min(1),
+  active: z.boolean(),
+});
+
 export type AuthActionState = {
   error?: string;
   success?: string;

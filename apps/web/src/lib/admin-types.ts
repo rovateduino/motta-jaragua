@@ -52,6 +52,16 @@ export interface AdminCategoryRecord {
   readonly name: string;
 }
 
+export interface AdminUserRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly active: boolean;
+  readonly lastLoginAt: string | null;
+  readonly roleIds: readonly string[];
+  readonly roleNames: readonly string[];
+}
+
 export interface AdminCustomerRecord {
   readonly id: string;
   readonly name: string;
