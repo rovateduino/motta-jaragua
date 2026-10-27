@@ -4,6 +4,10 @@ import { join } from "path";
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3100";
 const hasExternalServer = Boolean(process.env.E2E_BASE_URL);
 
+// No CI usamos o Chromium instalado pelo Playwright; localmente mantemos o
+// Chrome já instalado na máquina para não exigir download extra.
+const browserChannel = process.env.CI ? undefined : ("chrome" as const);
+
 // Caminho absoluto para o SQLite de teste (forward slashes p/ Windows).
 const testDbPath = join(__dirname, "packages/db/prisma/test.db").replace(/\\/g, "/");
 const testDatabaseUrl = `file:${testDbPath}`;
@@ -39,7 +43,7 @@ export default defineConfig({
       name: "desktop",
       use: {
         ...devices["Desktop Chrome"],
-        channel: "chrome",
+        channel: browserChannel,
         viewport: { width: 1440, height: 900 },
       },
     },
@@ -47,7 +51,7 @@ export default defineConfig({
       name: "mobile",
       use: {
         ...devices["Pixel 7"],
-        channel: "chrome",
+        channel: browserChannel,
         viewport: { width: 390, height: 844 },
       },
     },

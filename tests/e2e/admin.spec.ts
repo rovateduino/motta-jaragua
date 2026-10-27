@@ -31,8 +31,16 @@ async function openProductPage(
  * Cria um pedido real pelo fluxo do cliente (carrinho → checkout → banco) e
  * devolve o número gerado. Usado pelo teste do painel, que precisa de um pedido
  * de verdade gravado no PostgreSQL.
+ *
+ * A quantidade é parâmetro porque a idempotência do checkout é derivada do
+ * carrinho + cliente: execuções diferentes do mesmo teste (outro projeto ou
+ * retry) precisam de um carrinho distinto para gerar um pedido novo, e não
+ * reaproveitar o pedido — já confirmado — da execução anterior.
  */
-async function placeCustomerOrder(page: import("@playwright/test").Page): Promise<string> {
+async function placeCustomerOrder(
+  page: import("@playwright/test").Page,
+  quantityInUnits: number,
+): Promise<string> {
   await loginCustomer(page);
   await openProductPage(page, "arroz", "Arroz Tipo 1 5kg");
   const addToCartButton = page.getByRole("button", {
@@ -44,13 +52,16 @@ async function placeCustomerOrder(page: import("@playwright/test").Page): Promis
   // o subtotal ficar em 1 unidade, abaixo do pedido mínimo de R$ 30,00.
   await expect(addToCartButton).toBeEnabled({ timeout: 15_000 });
   const quantity = page.getByRole("group", { name: "Quantidade de Arroz Tipo 1 5kg" });
-  await page
-    .getByRole("button", { name: "Aumentar quantidade de Arroz Tipo 1 5kg" })
-    .click();
-  // Confirma que o aumento pegou (2 unidades) antes de adicionar ao carrinho.
-  await expect(quantity.getByText("2 un", { exact: true })).toBeVisible({
-    timeout: 15_000,
+  const increase = page.getByRole("button", {
+    name: "Aumentar quantidade de Arroz Tipo 1 5kg",
   });
+  for (let units = 1; units < quantityInUnits; units += 1) {
+    await increase.click();
+  }
+  // Confirma que os cliques pegaram antes de adicionar ao carrinho.
+  await expect(
+    quantity.getByText(`${quantityInUnits} un`, { exact: true }),
+  ).toBeVisible({ timeout: 15_000 });
   await addToCartButton.click();
 
   await page.goto("/checkout");
@@ -102,13 +113,16 @@ test("painel cria produto e oferta persistidos e a loja pública reflete", async
 
   await page.goto("/painel/ofertas");
   await page.getByRole("button", { name: "Nova oferta" }).click();
-  const productId = await page
-    .getByLabel("Produto")
+  // O label do <select> de produto começa com "Produto"; os checkboxes das
+  // ofertas existentes usam aria-label "Selecionar oferta de <produto>", por
+  // isso o regex ancorado no início (substring por padrão não serve).
+  const productSelect = page.getByLabel(/^Produto/);
+  const productId = await productSelect
     .locator("option")
     .filter({ hasText: productName })
     .getAttribute("value");
   if (!productId) throw new Error("Produto criado não apareceu nas opções da oferta.");
-  await page.getByLabel("Produto").selectOption(productId);
+  await productSelect.selectOption(productId);
   await page.getByLabel(/Preço promocional/).fill("19,90");
   await page.getByLabel(/Condições/).fill("Oferta válida no teste E2E.");
   await page.getByRole("button", { name: "Criar oferta", exact: true }).click();
@@ -126,10 +140,15 @@ test("painel cria produto e oferta persistidos e a loja pública reflete", async
 
 test("cliente cria pedido real e painel valida e grava transição de status", async ({
   page,
-}) => {
+}, testInfo) => {
   test.setTimeout(180_000);
   await ensureProductStock(page, "Arroz Tipo 1 5kg", 1000);
-  const orderNumber = await placeCustomerOrder(page);
+  // Quantidades distintas por projeto/retry: a chave de idempotência do
+  // checkout é o hash do carrinho + cliente, então sem isso o mobile receberia
+  // o pedido já confirmado pela execução desktop.
+  const cartQuantity =
+    2 + (testInfo.project.name === "mobile" ? 3 : 0) + testInfo.retry;
+  const orderNumber = await placeCustomerOrder(page, cartQuantity);
 
   await loginAdmin(page);
   await page.goto("/painel/pedidos");

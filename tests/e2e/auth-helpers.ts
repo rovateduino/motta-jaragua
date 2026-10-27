@@ -6,11 +6,26 @@ export const DEMO_PASSWORD = "Motta@2026!";
 const ADMIN_LANDING = /^https?:\/\/[^/]+\/painel\/?$/;
 const CUSTOMER_LANDING = /^https?:\/\/[^/]+\/conta\/?$/;
 
+/**
+ * `page.goto` esporadicamente falha com ERR_ABORTED no next dev (a navegação é
+ * interrompida ao trocar de sessão, ex.: admin → cliente no mesmo teste).
+ * Repetir uma vez resolve sem esconder outros erros de rede.
+ */
+async function gotoWithRetry(page: Page, path: string): Promise<void> {
+  try {
+    await page.goto(path);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("ERR_ABORTED")) throw error;
+    await page.goto(path);
+  }
+}
+
 export async function loginAdmin(
   page: Page,
   email = "admin@motta.test",
 ): Promise<void> {
-  await page.goto("/admin/entrar");
+  await gotoWithRetry(page, "/admin/entrar");
   await page.waitForLoadState("networkidle").catch(() => {});
   // Sessão admin já ativa (ex.: outro helper do mesmo teste logou antes):
   // /admin/entrar responde 307 para /painel e o formulário não existe.
@@ -32,7 +47,7 @@ export async function loginAdmin(
     if (!(await rateLimitMessage.isVisible())) throw error;
 
     await page.waitForTimeout(5_000);
-    await page.goto("/admin/entrar");
+    await gotoWithRetry(page, "/admin/entrar");
     await page.waitForLoadState("networkidle").catch(() => {});
     await page.getByLabel("E-mail").fill(email);
     await page.getByLabel("Senha", { exact: true }).fill(DEMO_PASSWORD);
@@ -45,7 +60,7 @@ export async function loginAdmin(
 }
 
 export async function loginCustomer(page: Page): Promise<void> {
-  await page.goto("/entrar");
+  await gotoWithRetry(page, "/entrar");
   await page.waitForLoadState("load");
   // Sessão de cliente já ativa: /entrar responde 307 para /conta, sem form.
   if (CUSTOMER_LANDING.test(page.url())) {

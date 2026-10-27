@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@motta/db";
@@ -67,6 +68,64 @@ export type CreateOrderResult =
 /** Falha de negócio esperada: vira mensagem amigável, não erro 500. */
 class CheckoutError extends Error {}
 
+/** Mesma janela da reserva de estoque: depois disso o pedido é cancelado. */
+const CHECKOUT_IDEMPOTENCY_TTL_MS = 30 * 60 * 1000;
+
+interface CachedCheckoutResponse {
+  readonly orderNumber: string;
+  readonly totalCents: number;
+}
+
+/**
+ * Chave determinística do carrinho + cliente.
+ *
+ * O mesmo conteúdo submetido duas vezes (duplo clique, retry de rede ou
+ * reenvio do formulário) produz a mesma chave; se o carrinho mudar, a chave
+ * muda. As quantidades são agregadas por produto para não depender da ordem
+ * das linhas enviadas pelo navegador.
+ */
+function buildCheckoutIdempotencyKey(
+  customerId: string,
+  items: readonly {
+    readonly productId: string;
+    readonly quantityMilli: number;
+  }[],
+): string {
+  const quantities = new Map<string, number>();
+  for (const item of items) {
+    quantities.set(
+      item.productId,
+      (quantities.get(item.productId) ?? 0) + item.quantityMilli,
+    );
+  }
+  const cart = [...quantities.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([productId, quantityMilli]) => ({ productId, quantityMilli }));
+
+  return createHash("sha256")
+    .update(JSON.stringify({ customerId, cart }))
+    .digest("hex");
+}
+
+function readCachedCheckout(responseJson: unknown): CachedCheckoutResponse | null {
+  if (
+    !responseJson ||
+    typeof responseJson !== "object" ||
+    Array.isArray(responseJson)
+  ) {
+    return null;
+  }
+  const record = responseJson as Record<string, unknown>;
+  if (typeof record.orderNumber !== "string") return null;
+  if (
+    typeof record.totalCents !== "number" ||
+    !Number.isFinite(record.totalCents)
+  ) {
+    return null;
+  }
+  return { orderNumber: record.orderNumber, totalCents: record.totalCents };
+}
+
 interface PromotionRow extends PromotionWindow {
   readonly promotionalPriceCents: number;
 }
@@ -107,6 +166,42 @@ export async function createOrderAction(input: unknown): Promise<CreateOrderResu
   }
   const data = parsed.data;
 
+  // Idempotência: a chave nasce do conteúdo do carrinho + cliente. Antes de
+  // qualquer reserva de estoque, devolve o pedido já criado para o mesmo
+  // conteúdo dentro da janela de 30 minutos.
+  const idempotencyScope = `checkout:${customer.id}`;
+  const idempotencyKey = buildCheckoutIdempotencyKey(customer.id, data.items);
+  const requestHash = createHash("sha256")
+    .update(JSON.stringify({ customerId: customer.id, ...data }))
+    .digest("hex");
+  const idempotencyNow = new Date();
+
+  const existingKey = await prisma.idempotencyKey.findUnique({
+    where: { key: idempotencyKey },
+    select: { scope: true, expiresAt: true, responseJson: true },
+  });
+  if (existingKey && existingKey.scope === idempotencyScope) {
+    if (existingKey.expiresAt > idempotencyNow) {
+      const cached = readCachedCheckout(existingKey.responseJson);
+      if (cached) {
+        return {
+          ok: true,
+          orderNumber: cached.orderNumber,
+          totalCents: cached.totalCents,
+        };
+      }
+      return {
+        ok: false,
+        message:
+          "Seu pedido já está sendo processado. Aguarde alguns instantes antes de tentar novamente.",
+      };
+    }
+    // Chave expirada: pode ser substituída por uma nova tentativa.
+    await prisma.idempotencyKey.deleteMany({
+      where: { key: idempotencyKey, expiresAt: { lte: idempotencyNow } },
+    });
+  }
+
   const settings = await getStoreSettings();
   if (!settings) {
     return {
@@ -137,6 +232,18 @@ export async function createOrderAction(input: unknown): Promise<CreateOrderResu
   try {
     const created = await prisma.$transaction(async (transaction) => {
       const now = new Date();
+
+      // Reserva a chave dentro da transação: se duas requisições idênticas
+      // chegarem juntas, apenas uma cria o pedido; a outra recebe P2002.
+      await transaction.idempotencyKey.create({
+        data: {
+          key: idempotencyKey,
+          scope: idempotencyScope,
+          requestHash,
+          expiresAt: new Date(now.getTime() + CHECKOUT_IDEMPOTENCY_TTL_MS),
+        },
+      });
+
       const productIds = [...new Set(data.items.map((item) => item.productId))];
 
       const products = await transaction.product.findMany({
@@ -313,6 +420,17 @@ export async function createOrderAction(input: unknown): Promise<CreateOrderResu
         });
       }
 
+      await transaction.idempotencyKey.update({
+        where: { key: idempotencyKey },
+        data: {
+          responseJson: {
+            orderNumber: createdOrderNumber,
+            totalCents,
+            customerId: customer.id,
+          },
+        },
+      });
+
       return { orderNumber: createdOrderNumber, totalCents };
     });
 
@@ -323,6 +441,29 @@ export async function createOrderAction(input: unknown): Promise<CreateOrderResu
   } catch (error) {
     if (error instanceof CheckoutError) {
       return { ok: false, message: error.message };
+    }
+    if (isUniqueViolation(error)) {
+      // Duas requisições idênticas passaram pelo pré-check ao mesmo tempo:
+      // a que perdeu a corrida reutiliza a resposta da vencedora.
+      const raced = await prisma.idempotencyKey.findUnique({
+        where: { key: idempotencyKey },
+        select: { scope: true, responseJson: true },
+      });
+      if (raced?.scope === idempotencyScope) {
+        const cached = readCachedCheckout(raced.responseJson);
+        if (cached) {
+          return {
+            ok: true,
+            orderNumber: cached.orderNumber,
+            totalCents: cached.totalCents,
+          };
+        }
+        return {
+          ok: false,
+          message:
+            "Seu pedido já está sendo processado. Aguarde alguns instantes antes de tentar novamente.",
+        };
+      }
     }
     console.error("Falha ao criar o pedido no banco:", error);
     return {
