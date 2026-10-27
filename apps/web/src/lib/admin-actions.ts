@@ -541,6 +541,43 @@ export async function setAdminPromotionActive(
   }
 }
 
+/**
+ * Exclusão física de uma oferta com auditoria, tudo na mesma transação.
+ *
+ * Promoção é uma regra temporária de preço, não um dado histórico como pedido,
+ * por isso pode ser removida do banco. É a base da exclusão individual e da
+ * exclusão em massa: a segunda reaproveita esta função por oferta, de forma que
+ * cada item é atômico isoladamente.
+ */
+async function deletePromotionRecord(
+  adminId: string,
+  storeId: string,
+  promotionId: string,
+) {
+  return prisma.$transaction(async (transaction) => {
+    const promotion = await transaction.promotion.findFirst({
+      where: { id: promotionId, storeId },
+      select: { id: true, product: { select: { name: true, sku: true } } },
+    });
+    if (!promotion) throw new AdminActionError("Oferta não encontrada.");
+    await transaction.auditLog.create({
+      data: {
+        actorType: "ADMIN",
+        actorAdminId: adminId,
+        action: "promotion.deleted",
+        entityType: "Promotion",
+        entityId: promotion.id,
+        before: {
+          productName: promotion.product.name,
+          sku: promotion.product.sku,
+        },
+      },
+    });
+    await transaction.promotion.delete({ where: { id: promotion.id } });
+    return promotion;
+  });
+}
+
 export async function deleteAdminPromotion(promotionId: string): Promise<AdminActionResult> {
   const admin = await requireAdminAction("promotions.write");
   try {
@@ -550,29 +587,76 @@ export async function deleteAdminPromotion(promotionId: string): Promise<AdminAc
       select: { id: true },
     });
     if (!store) return { ok: false, message: "Não há uma loja ativa configurada." };
-    await prisma.$transaction(async (transaction) => {
-      const promotion = await transaction.promotion.findUnique({
-        where: { id: promotionId, storeId: store.id },
-        select: { id: true, product: { select: { name: true, sku: true } } },
-      });
-      if (!promotion) throw new Error("Oferta não encontrada.");
-      await transaction.auditLog.create({
-        data: {
-          actorType: "ADMIN",
-          actorAdminId: admin.id,
-          action: "promotion.deleted",
-          entityType: "Promotion",
-          entityId: promotion.id,
-          before: { productName: promotion.product.name, sku: promotion.product.sku },
-        },
-      });
-      await transaction.promotion.delete({ where: { id: promotion.id } });
-    });
+    await deletePromotionRecord(admin.id, store.id, promotionId);
     revalidateCatalog();
     return { ok: true, message: "Oferta excluída." };
   } catch (error) {
     return actionFailure(error, "Não foi possível excluir a oferta.");
   }
+}
+
+/**
+ * Exclusão em massa de ofertas. Cada oferta é excluída na própria transação,
+ * então uma falha isolada não impede as demais; a resposta informa quantas
+ * saíram e o motivo das que ficaram.
+ */
+export async function deletePromotionsAction(ids: string[]): Promise<AdminActionResult> {
+  const admin = await requireAdminAction("promotions.write");
+  const parsed = z
+    .array(z.string().trim().min(1))
+    .min(1)
+    .max(200)
+    .safeParse(ids);
+  if (!parsed.success) {
+    return { ok: false, message: "Selecione ao menos uma oferta para excluir." };
+  }
+
+  const store = await prisma.store.findFirst({
+    where: { active: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!store) return { ok: false, message: "Não há uma loja ativa configurada." };
+
+  const uniqueIds = [...new Set(parsed.data)];
+  const failures: string[] = [];
+  let deleted = 0;
+
+  for (const id of uniqueIds) {
+    try {
+      await deletePromotionRecord(admin.id, store.id, id);
+      deleted += 1;
+    } catch (error) {
+      failures.push(
+        error instanceof AdminActionError
+          ? error.message
+          : "Falha inesperada ao excluir uma das ofertas.",
+      );
+    }
+  }
+
+  if (deleted === 0) {
+    return {
+      ok: false,
+      message: failures[0] ?? "Nenhuma oferta foi excluída.",
+    };
+  }
+
+  revalidateCatalog();
+
+  if (failures.length === 0) {
+    return {
+      ok: true,
+      message: `${deleted} ${deleted === 1 ? "oferta excluída" : "ofertas excluídas"}.`,
+    };
+  }
+
+  const detail = failures.slice(0, 3).join(" ");
+  const rest = failures.length > 3 ? ` (+${failures.length - 3} outra(s))` : "";
+  return {
+    ok: false,
+    message: `${deleted} de ${uniqueIds.length} excluídas. ${detail}${rest}`,
+  };
 }
 
 export async function updateAdminOrderStatus(input: unknown): Promise<AdminActionResult> {

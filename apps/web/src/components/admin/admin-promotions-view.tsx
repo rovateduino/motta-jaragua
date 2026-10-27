@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { discountPercentage, formatBRL } from "@motta/domain";
-import { buttonStyles, Card, CardBody } from "@motta/ui";
+import {
+  buttonStyles,
+  Card,
+  CardBody,
+  EditIcon,
+} from "@motta/ui";
 import {
   deleteAdminPromotion,
+  deletePromotionsAction,
   saveAdminPromotion,
   setAdminPromotionActive,
 } from "@/lib/admin-actions";
@@ -165,12 +172,80 @@ export function AdminPromotionsView({
   const [filter, setFilter] = useState<"ALL" | PromotionState>("ALL");
   const [formMode, setFormMode] = useState<"NONE" | "CREATE" | string>("NONE");
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [selectedIds, setSelectedIds] = useState<readonly string[]>([]);
+  const [bulkPending, setBulkPending] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const now = new Date();
   const editing = promotions.find((promotion) => promotion.id === formMode);
   const rows = promotions
     .map((promotion) => ({ promotion, state: promotionState(promotion, now) }))
     .filter((row) => filter === "ALL" || row.state === filter)
     .sort((a, b) => new Date(a.promotion.endsAt).getTime() - new Date(b.promotion.endsAt).getTime());
+
+  // A seleção em massa vale só para o que está visível: trocar o filtro limpa a
+  // seleção para não excluir ofertas escondidas por engano.
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [filter]);
+
+  // Depois de um refresh as ofertas excluídas saem da lista: descarta da seleção
+  // os ids que não existem mais.
+  useEffect(() => {
+    setSelectedIds((current) => {
+      const alive = current.filter((id) =>
+        promotions.some((promotion) => promotion.id === id),
+      );
+      return alive.length === current.length ? current : alive;
+    });
+  }, [promotions]);
+
+  const allSelected =
+    rows.length > 0 &&
+    rows.every((row) => selectedIds.includes(row.promotion.id));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate =
+        selectedIds.length > 0 && !allSelected;
+    }
+  }, [selectedIds.length, allSelected]);
+
+  function toggleSelection(promotionId: string): void {
+    setSelectedIds((current) =>
+      current.includes(promotionId)
+        ? current.filter((id) => id !== promotionId)
+        : [...current, promotionId],
+    );
+  }
+
+  function toggleAll(): void {
+    setSelectedIds(
+      allSelected ? [] : rows.map((row) => row.promotion.id),
+    );
+  }
+
+  async function removeSelected(): Promise<void> {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const label =
+      ids.length === 1 ? "1 oferta selecionada" : `${ids.length} ofertas selecionadas`;
+    if (!window.confirm(`Excluir ${label}? A remoção é definitiva.`)) return;
+
+    setBulkPending(true);
+    setFeedback(null);
+    try {
+      const result = await deletePromotionsAction(ids);
+      setFeedback({ tone: result.ok ? "success" : "error", text: result.message });
+      setSelectedIds([]);
+      // `refresh` atualiza a lista do servidor sem perder o feedback na tela.
+      router.refresh();
+    } catch {
+      setFeedback({ tone: "error", text: "Falha inesperada ao excluir as ofertas." });
+    } finally {
+      setBulkPending(false);
+    }
+  }
 
   async function toggle(promotion: AdminPromotionRecord) {
     try {
@@ -199,14 +274,71 @@ export function AdminPromotionsView({
       {feedback ? <Feedback tone={feedback.tone}>{feedback.text}</Feedback> : null}
       {formMode !== "NONE" ? <Card><CardBody className="space-y-4"><h2 className="text-lg font-extrabold">{editing ? "Editar oferta" : "Nova oferta"}</h2><PromotionForm key={formMode} products={products} promotion={editing} onCancel={() => setFormMode("NONE")} /></CardBody></Card> : null}
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar ofertas por estado">{(["ALL", "ACTIVE", "SCHEDULED", "EXPIRED", "INACTIVE"] as const).map((state) => <button key={state} type="button" aria-pressed={filter === state} onClick={() => setFilter(state)} className={filter === state ? buttonStyles({ variant: "dark", size: "sm" }) : buttonStyles({ variant: "outline", size: "sm" })}>{stateLabels[state]}</button>)}</div>
-      {rows.length === 0 ? <EmptyState title="Nenhuma oferta encontrada" description="Crie uma oferta ou altere o filtro selecionado." /> : <div className="space-y-2">{rows.map(({ promotion, state }) => {
-        const discount = promotion.basePriceCents > promotion.promotionalPriceCents ? discountPercentage(promotion.basePriceCents, promotion.promotionalPriceCents) : 0;
-        return <Card key={promotion.id}><CardBody className="flex flex-wrap items-center gap-3 p-4">
-          <span aria-hidden="true" className="text-2xl">{promotion.emoji}</span>
-          <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold">{promotion.productName}</h2><PromotionStatusBadge state={state} />{discount ? <span className="rounded bg-motta-yellow px-2 text-xs font-black">-{discount}%</span> : null}</div><p className="text-xs text-motta-gray-500">{promotion.sku} · {formatAdminDate(promotion.startsAt)} a {formatAdminDate(promotion.endsAt)}</p><p className="text-sm font-bold">{formatBRL(promotion.promotionalPriceCents)} <span className="text-xs text-motta-gray-500 line-through">{formatBRL(promotion.basePriceCents)}</span></p><p className="text-xs">{promotion.conditions}</p></div>
-          <div className="flex flex-wrap gap-1"><Link href={`/produto/${promotion.slug}`} className={buttonStyles({ variant: "ghost", size: "sm" })}>Ver loja</Link><button type="button" onClick={() => setFormMode(promotion.id)} className={buttonStyles({ variant: "outline", size: "sm" })}>Editar</button><button type="button" onClick={() => void toggle(promotion)} className={buttonStyles({ variant: "ghost", size: "sm" })}>{promotion.active ? "Desativar" : "Ativar"}</button><button type="button" onClick={() => void remove(promotion)} className={buttonStyles({ variant: "ghost", size: "sm" })}>Excluir</button></div>
-        </CardBody></Card>;
-      })}</div>}
+      {rows.length === 0 ? <EmptyState title="Nenhuma oferta encontrada" description="Crie uma oferta ou altere o filtro selecionado." /> : (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-motta-gray-200 bg-motta-gray-50 px-3 py-2">
+            <label className="flex items-center gap-2 text-xs font-bold text-motta-ink">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleAll}
+                aria-label="Selecionar todas as ofertas listadas"
+                className="h-4 w-4 accent-motta-red"
+              />
+              Selecionar todas
+            </label>
+            <span className="text-xs text-motta-gray-500">
+              {selectedIds.length > 0
+                ? `${selectedIds.length} de ${rows.length} selecionada(s)`
+                : `${rows.length} oferta(s) na lista`}
+            </span>
+          </div>
+
+          {selectedIds.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-motta-red/30 bg-red-50 px-3 py-2">
+              <strong className="text-xs font-bold text-motta-ink">
+                {selectedIds.length} selecionada(s)
+              </strong>
+              <button
+                type="button"
+                disabled={bulkPending}
+                onClick={() => void removeSelected()}
+                className={buttonStyles({ variant: "primary", size: "sm" })}
+              >
+                {bulkPending
+                  ? "Excluindo…"
+                  : `Excluir Selecionados (${selectedIds.length})`}
+              </button>
+              <button
+                type="button"
+                disabled={bulkPending}
+                onClick={() => setSelectedIds([])}
+                className={buttonStyles({ variant: "ghost", size: "sm" })}
+              >
+                Limpar seleção
+              </button>
+            </div>
+          ) : null}
+
+          {rows.map(({ promotion, state }) => {
+            const discount = promotion.basePriceCents > promotion.promotionalPriceCents ? discountPercentage(promotion.basePriceCents, promotion.promotionalPriceCents) : 0;
+            const selected = selectedIds.includes(promotion.id);
+            return <Card key={promotion.id} className={selected ? "ring-2 ring-motta-red/30" : undefined}><CardBody className="flex flex-wrap items-center gap-3 p-4">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => toggleSelection(promotion.id)}
+                aria-label={`Selecionar oferta de ${promotion.productName}`}
+                className="h-4 w-4 shrink-0 accent-motta-red"
+              />
+              <span aria-hidden="true" className="text-2xl">{promotion.emoji}</span>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold">{promotion.productName}</h2><PromotionStatusBadge state={state} />{discount ? <span className="rounded bg-motta-yellow px-2 text-xs font-black">-{discount}%</span> : null}</div><p className="text-xs text-motta-gray-500">{promotion.sku} · {formatAdminDate(promotion.startsAt)} a {formatAdminDate(promotion.endsAt)}</p><p className="text-sm font-bold">{formatBRL(promotion.promotionalPriceCents)} <span className="text-xs text-motta-gray-500 line-through">{formatBRL(promotion.basePriceCents)}</span></p><p className="text-xs">{promotion.conditions}</p></div>
+              <div className="flex flex-wrap gap-1"><Link href={`/produto/${promotion.slug}`} className={buttonStyles({ variant: "ghost", size: "sm" })}>Ver loja</Link><button type="button" onClick={() => setFormMode(promotion.id)} className={buttonStyles({ variant: "outline", size: "sm" })}><EditIcon className="h-4 w-4" />Editar</button><button type="button" onClick={() => void toggle(promotion)} className={buttonStyles({ variant: "ghost", size: "sm" })}>{promotion.active ? "Desativar" : "Ativar"}</button><button type="button" onClick={() => void remove(promotion)} className={buttonStyles({ variant: "ghost", size: "sm" })}>Excluir</button></div>
+            </CardBody></Card>;
+          })}
+        </div>
+      )}
     </div>
   );
 }
