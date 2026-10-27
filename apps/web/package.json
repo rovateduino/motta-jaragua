@@ -16,6 +16,7 @@
     "@motta/domain": "0.1.0",
     "@motta/ui": "0.1.0",
     "@node-rs/argon2": "2.2.2",
+    "@supabase/supabase-js": "^2.118.0",
     "next": "15.5.28",
     "react": "19.2.9",
     "react-dom": "19.2.9",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatBRL, formatQuantity, type SaleUnit } from "@motta/domain";
@@ -11,6 +11,7 @@ import {
   saveAdminProduct,
   setAdminProductActive,
 } from "@/lib/admin-actions";
+import { uploadProductImageAction } from "@/lib/storage-actions";
 import {
   LOW_STOCK_THRESHOLD_MILLI,
   type AdminCategoryRecord,
@@ -24,8 +25,11 @@ import {
 } from "@/components/admin/shared";
 import { formatAdminDateTime } from "@/lib/admin-format";
 
-const fieldClass =
-  "mt-1 h-11 w-full rounded-xl border border-motta-gray-300 bg-white px-3 text-sm text-motta-ink focus-visible:border-motta-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-motta-red/30";
+const inputBaseClass =
+  "h-11 w-full rounded-xl border border-motta-gray-300 bg-white px-3 text-sm text-motta-ink focus-visible:border-motta-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-motta-red/30";
+const fieldClass = `mt-1 ${inputBaseClass}`;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 interface ProductDraft {
   readonly id?: string;
@@ -77,7 +81,49 @@ function ProductForm({
   );
   const [active, setActive] = useState(product?.active ?? true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleImageFile(
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> {
+    const file = event.target.files?.[0];
+    // Permite selecionar o mesmo arquivo novamente após um erro.
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError("A imagem deve ter no máximo 2 MB.");
+      return;
+    }
+    if (
+      file.type &&
+      !ALLOWED_IMAGE_TYPES.includes(
+        file.type as (typeof ALLOWED_IMAGE_TYPES)[number],
+      )
+    ) {
+      setError("Envie uma imagem JPG, PNG ou WebP.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    setUploading(true);
+    setError(null);
+    try {
+      const result = await uploadProductImageAction(formData);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setImageUrl(result.url);
+    } catch {
+      setError("Falha inesperada ao enviar a imagem.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -173,20 +219,44 @@ function ProductForm({
         Descrição
         <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className="mt-1 w-full rounded-xl border border-motta-gray-300 p-3 text-sm" />
       </label>
-      <label className="text-xs font-bold text-motta-ink sm:col-span-2">
-        URL da imagem (opcional)
-        <input
-          type="url"
-          inputMode="url"
-          value={imageUrl}
-          onChange={(event) => setImageUrl(event.target.value)}
-          placeholder="https://exemplo.com/foto-do-produto.jpg"
-          className={fieldClass}
-        />
+      <div className="text-xs font-bold text-motta-ink sm:col-span-2">
+        <label htmlFor="product-image-url" className="block">
+          URL da imagem (opcional)
+        </label>
+        <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+          <input
+            id="product-image-url"
+            type="url"
+            inputMode="url"
+            value={imageUrl}
+            onChange={(event) => setImageUrl(event.target.value)}
+            placeholder="https://exemplo.com/foto-do-produto.jpg"
+            className={inputBaseClass}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => void handleImageFile(event)}
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || submitting}
+            className={`${buttonStyles({ variant: "outline" })} shrink-0 whitespace-nowrap`}
+          >
+            {uploading ? "Enviando…" : "Escolher do computador"}
+          </button>
+        </div>
         <span className="mt-1 block text-[11px] font-normal text-motta-gray-500">
-          Endereço público da foto (http/https). Sem foto, a loja mostra o emoji do departamento.
+          JPG, PNG ou WebP até 2 MB. O upload preenche a URL automaticamente;
+          você também pode colar um endereço público (http/https). Sem foto, a
+          loja mostra o emoji do departamento.
         </span>
-      </label>
+      </div>
       {imagePreview ? (
         <div className="flex items-center gap-3 rounded-xl border border-motta-gray-200 p-2 sm:col-span-2">
           {/* eslint-disable-next-line @next/next/no-img-element -- prévia de URL externa; sem storage/otimização ainda. */}
@@ -196,7 +266,7 @@ function ProductForm({
       ) : null}
       {error ? <div className="sm:col-span-2"><Feedback tone="error">{error}</Feedback></div> : null}
       <div className="flex gap-2 sm:col-span-2">
-        <button disabled={submitting || categories.length === 0} type="submit" className={buttonStyles({ variant: "primary" })}>
+        <button disabled={submitting || uploading || categories.length === 0} type="submit" className={buttonStyles({ variant: "primary" })}>
           {submitting ? "Salvando…" : product ? "Salvar alterações" : "Criar produto"}
         </button>
         <button type="button" onClick={onCancel} className={buttonStyles({ variant: "outline" })}>Cancelar</button>

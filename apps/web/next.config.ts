@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // Upload de imagens de produto (até 2 MB) via Server Action.
+    serverActions: {
+      bodySizeLimit: "3mb",
+    },
+  },
   transpilePackages: [
     "@motta/ui",
     "@motta/domain",
