@@ -18,7 +18,7 @@ import { CategoryCard } from "@/components/category-card";
 import { CatalogMaintenance } from "@/components/catalog/catalog-maintenance";
 import { HomeStoreSections } from "@/components/home/store-sections";
 import { findStoreProduct, getStoreCatalog } from "@/lib/catalog-db";
-import { hasPromotion } from "@/lib/catalog-core";
+import { hasPromotion, resolveProductImageUrl } from "@/lib/catalog-core";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +45,9 @@ export default async function HomePage() {
   const featured = catalog
     ? findStoreProduct(catalog, "arroz-tipo-1-5kg")
     : undefined;
+  const featuredImageUrl = featured
+    ? resolveProductImageUrl(featured)
+    : null;
 
   return (
     <>
@@ -113,8 +116,17 @@ export default async function HomePage() {
                   Exemplo visual
                 </span>
               </div>
-              <div className="mt-3 flex h-40 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-50 to-white text-8xl">
-                {featured?.emoji ?? "🍚"}
+              <div className="mt-3 flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-white text-8xl">
+                {featuredImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- URLs públicas de imagens cadastradas.
+                  <img
+                    src={featuredImageUrl}
+                    alt=""
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  featured?.emoji ?? "🍚"
+                )}
               </div>
               <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-motta-gray-500">
                 Mercearia
