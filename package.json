@@ -26,11 +26,13 @@
     "db:generate": "npm run db:generate -w @motta/db",
     "db:migrate": "npm run db:migrate -w @motta/db",
     "db:seed": "npm run db:seed -w @motta/db",
+    "db:disable-demo-admins": "dotenv -e .env -- tsx scripts/disable-demo-admins.ts",
     "db:studio": "npm run db:studio -w @motta/db",
     "postinstall": "npm run db:generate"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
+    "dotenv": "16.6.1",
     "dotenv-cli": "8.0.0",
     "typescript": "5.9.3"
   }

@@ -18,9 +18,13 @@ import {
 import { useCart } from "./cart-provider";
 import { QuantityStepper } from "@/components/catalog/quantity-stepper";
 import { getMaxQuantityMilli, resolveProductImageUrl } from "@/lib/catalog-core";
-import { demoCheckoutRules } from "@/lib/demo-content";
 
-export function CartView() {
+export function CartView({
+  freeShippingThresholdCents,
+}: {
+  /** Faixa de frete grátis configurada no painel (0 = regra desativada). */
+  readonly freeShippingThresholdCents: number;
+}) {
   const {
     items,
     hydrated,
@@ -77,7 +81,7 @@ export function CartView() {
 
   const missingForFreeShipping = Math.max(
     0,
-    demoCheckoutRules.freeShippingThresholdCents - subtotalCents,
+    freeShippingThresholdCents - subtotalCents,
   );
 
   return (
@@ -206,17 +210,19 @@ export function CartView() {
               <span className="font-semibold text-motta-gray-500">A calcular</span>
             </div>
 
-            <div className="rounded-lg bg-motta-gray-50 px-3 py-2 text-[11px] leading-relaxed text-motta-gray-500">
-              {missingForFreeShipping > 0 ? (
-                <>
-                  Faltam <strong>{formatBRL(missingForFreeShipping)}</strong> para a
-                  faixa demonstrativa de frete grátis.
-                </>
-              ) : (
-                <>Faixa demonstrativa de frete grátis atingida.</>
-              )}{" "}
-              A regra real será confirmada com o Mercado Motta.
-            </div>
+            {freeShippingThresholdCents > 0 ? (
+              <div className="rounded-lg bg-motta-gray-50 px-3 py-2 text-[11px] leading-relaxed text-motta-gray-500">
+                {missingForFreeShipping > 0 ? (
+                  <>
+                    Faltam <strong>{formatBRL(missingForFreeShipping)}</strong> para o
+                    frete grátis.
+                  </>
+                ) : (
+                  <>Frete grátis liberado para este pedido.</>
+                )}{" "}
+                Regra definida nas configurações da loja.
+              </div>
+            ) : null}
 
             <div className="flex items-end justify-between border-t border-motta-gray-200 pt-3">
               <span className="text-sm font-bold text-motta-ink">Total parcial</span>

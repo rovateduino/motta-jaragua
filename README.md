@@ -74,7 +74,7 @@ cp .env.example .env
 npm run db:validate
 npm run db:migrate
 
-# 4. Popular dados fictícios de demonstração
+# 4. Popular dados fictícios de demonstração (não cria acessos administrativos)
 npm run db:seed
 
 # 5. Rodar a loja
@@ -82,6 +82,9 @@ npm run dev
 ```
 
 A loja estará em `http://localhost:3000`.
+
+No primeiro acesso ao painel, abra `http://localhost:3000/admin/cadastro` e crie o
+administrador inicial. O seed **não** cria mais contas administrativas demo.
 
 ### Banco de dados necessário
 
@@ -106,7 +109,8 @@ checkout recalcula preços/estoque no servidor e grava o pedido no banco.
 | `npm run db:generate` | Gera o Prisma Client |
 | `npm run db:migrate` | Aplica migrations (`prisma migrate deploy`) |
 | `npm run db:migrate:dev` | Cria/aplica migrations em desenvolvimento |
-| `npm run db:seed` | Popula dados fictícios de demonstração |
+| `npm run db:seed` | Popula dados fictícios de demonstração (sem acessos administrativos) |
+| `npm run db:disable-demo-admins` | Desativa as contas administrativas demo no banco do `.env` |
 | `npm run db:studio` | Abre o Prisma Studio |
 
 ## Variáveis de ambiente
@@ -136,6 +140,19 @@ Copie `.env.example` para `.env`. Nomes principais:
 - Pedidos guardam **snapshot** de nome, unidade e preço dos itens.
 - O schema já contempla auditoria, idempotência, outbox, notificações e documento fiscal.
 - A migration inicial está em `packages/db/prisma/migrations/0001_init`.
+- Os comandos de banco rodam a partir de `packages/db`, mas o `.env` fica na raiz.
+  O `packages/db/prisma.config.ts` carrega esse arquivo automaticamente; em
+  CI/Vercel, onde não existe `.env`, as variáveis vêm do ambiente da plataforma.
+  Não é preciso usar `dotenv` na mão para `db:validate`, `db:migrate` ou `db:seed`.
+- O seed **não cria contas de administrador**. O primeiro acesso é feito em
+  `/admin/cadastro` (disponível apenas enquanto houver zero administradores).
+- As contas do seed antigo (`admin@motta.test` e `atendimento@motta.test`) devem
+  ser desativadas em bancos que já receberam aquele seed:
+  `npm run db:disable-demo-admins` (carrega o `.env` da raiz). Com
+  `APP_MODE=production`, o login desses e-mails também é bloqueado pelo código,
+  como segunda barreira. Antes de ativar o modo produção, crie um administrador
+  real e desative as contas demo — o cadastro inicial (`/admin/cadastro`) só
+  abre quando não existe nenhum administrador.
 - No Neon, `DATABASE_URL` usa o hostname com `-pooler` e `pgbouncer=true`; o Prisma
   usa `DIRECT_URL` (sem `-pooler`) para aplicar migrations. Ambas exigem
   `sslmode=require`.

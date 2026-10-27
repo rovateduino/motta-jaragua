@@ -6,7 +6,8 @@
  * 2. Gera o Prisma Client com o schema SQLite (schema.sqlite.prisma)
  * 3. Roda prisma db push para criar as tabelas no SQLite
  * 4. Roda o seed (adaptado p/ SQLite: remove skipDuplicates, não suportado no SQLite)
- * 5. Limpa o arquivo temporário de seed
+ * 5. Cria os acessos administrativos usados só pelos testes (seed-test-admins.ts)
+ * 6. Limpa o arquivo temporário de seed
  *
  * Uso: npx tsx scripts/setup-test-db.ts
  *
@@ -71,6 +72,10 @@ async function main(): Promise<void> {
   if (existsSync(seedSqliteTemp)) {
     unlinkSync(seedSqliteTemp);
   }
+
+  // 7. Cria os acessos administrativos exclusivos dos testes E2E
+  console.log("🔑 Criando acessos administrativos de teste...");
+  run(`npx tsx "${join(root, "scripts/seed-test-admins.ts")}"`);
 
   console.log(`\n✅ Banco de teste SQLite pronto: ${dbPath}`);
   console.log("   Variáveis injetadas: DATABASE_URL e DIRECT_URL apontando para o SQLite.");

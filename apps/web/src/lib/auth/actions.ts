@@ -24,6 +24,7 @@ import {
   loginRetryAfterSeconds,
   recordLoginFailure,
 } from "./rate-limit";
+import { isLegacyDemoAdminBlocked } from "./demo-accounts";
 import {
   endAdminSession,
   endCustomerSession,
@@ -103,6 +104,13 @@ export async function loginAdminAction(
   });
 
   if (!parsed.success) {
+    return { error: GENERIC_LOGIN_ERROR };
+  }
+
+  // Contas demo do seed antigo nunca autenticam em produção, mesmo que o
+  // registro tenha sido reativado no banco (defesa em profundidade).
+  if (isLegacyDemoAdminBlocked(parsed.data.email)) {
+    recordLoginFailure(await loginRateLimitKey(parsed.data.email));
     return { error: GENERIC_LOGIN_ERROR };
   }
 

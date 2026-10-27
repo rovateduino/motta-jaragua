@@ -131,7 +131,10 @@ const permissions = [
 ] as const;
 
 /**
- * Hash Argon2id da senha fictícia "Motta@2026!" usada apenas pelas contas demo.
+ * Hash Argon2id da senha fictícia "Motta@2026!" usada apenas pela conta demo de
+ * cliente. Contas administrativas demo **não** são mais criadas pelo seed: o
+ * primeiro administrador deve ser cadastrado em `/admin/cadastro` (e as contas
+ * antigas precisam ser desativadas no banco de produção).
  * Nunca reutilize esta senha em ambientes reais.
  */
 const DEMO_PASSWORD_HASH =
@@ -156,40 +159,6 @@ function daysFrom(base: Date, days: number): Date {
   const copy = new Date(base);
   copy.setUTCDate(copy.getUTCDate() + days);
   return copy;
-}
-
-async function upsertDemoAdmin(input: {
-  name: string;
-  email: string;
-  roleNames: string[];
-}): Promise<string> {
-  const admin = await prisma.adminUser.upsert({
-    where: { email: input.email },
-    update: {
-      name: input.name,
-      passwordHash: DEMO_PASSWORD_HASH,
-      active: true,
-    },
-    create: {
-      name: input.name,
-      email: input.email,
-      passwordHash: DEMO_PASSWORD_HASH,
-      active: true,
-    },
-  });
-
-  const roles = await prisma.role.findMany({
-    where: { name: { in: input.roleNames } },
-    select: { id: true },
-  });
-
-  await prisma.adminUserRole.deleteMany({ where: { adminUserId: admin.id } });
-  await prisma.adminUserRole.createMany({
-    data: roles.map((role) => ({ adminUserId: admin.id, roleId: role.id })),
-    skipDuplicates: true,
-  });
-
-  return admin.id;
 }
 
 async function main(): Promise<void> {
@@ -409,26 +378,8 @@ async function main(): Promise<void> {
     },
   });
 
-  const demoAdminIds = await Promise.all([
-    upsertDemoAdmin({
-      name: "Administrador Motta",
-      email: "admin@motta.test",
-      roleNames: ["ADMIN"],
-    }),
-    upsertDemoAdmin({
-      name: "Atendimento Motta",
-      email: "atendimento@motta.test",
-      roleNames: ["SUPPORT"],
-    }),
-  ]);
-
   await prisma.authSession.deleteMany({
-    where: {
-      OR: [
-        { customerId: demoCustomer.id },
-        { adminUserId: { in: demoAdminIds } },
-      ],
-    },
+    where: { customerId: demoCustomer.id },
   });
   console.log("Seed de demonstração concluído:");
   console.log(`  Loja: ${store.name}`);
@@ -436,6 +387,7 @@ async function main(): Promise<void> {
   console.log(`  Produtos: ${products.length}`);
   console.log(`  Promoções: ${promotions.length}`);
   console.log(`  Papéis: ${roles.length}`);
+  console.log("  Acessos administrativos: nenhum (use /admin/cadastro no primeiro acesso).");
   console.log("  Aviso: todos os dados são fictícios.");
 }
 
