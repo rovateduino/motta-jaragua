@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminCustomersView } from "@/components/admin/admin-customers-view";
-import { requireAdminPermission } from "@/lib/auth/session";
+import { hasPermission, requireAdminPermission } from "@/lib/auth/session";
 import { getAdminCustomers } from "@/lib/admin-db";
 
 export const metadata: Metadata = {
@@ -10,7 +10,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminCustomersPage() {
-  await requireAdminPermission("customers.read");
+  const admin = await requireAdminPermission("customers.read");
   const customers = await getAdminCustomers();
-  return <AdminCustomersView customers={customers} />;
+  return (
+    <AdminCustomersView
+      customers={customers}
+      canWrite={hasPermission(admin, "customers.manage")}
+    />
+  );
 }

@@ -16,6 +16,7 @@ const permissionLabels: Record<string, string> = {
   "inventory.write": "ajustar estoque",
   "promotions.write": "gerenciar ofertas",
   "customers.read": "consultar clientes",
+  "customers.manage": "editar e anonimizar clientes",
   "reports.read": "consultar relatórios",
   "settings.write": "alterar configurações",
   "users.manage": "gerenciar usuários",

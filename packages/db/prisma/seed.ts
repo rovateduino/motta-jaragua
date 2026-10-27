@@ -124,6 +124,7 @@ const permissions = [
   ["inventory.write", "Ajustar estoque"],
   ["promotions.write", "Gerenciar promoções e preços"],
   ["customers.read", "Consultar clientes"],
+  ["customers.manage", "Editar e anonimizar clientes"],
   ["reports.read", "Consultar relatórios"],
   ["settings.write", "Alterar configurações"],
   ["users.manage", "Gerenciar usuários e papéis"],
@@ -142,7 +143,7 @@ const DEMO_PASSWORD_HASH =
 
 const roles: Array<{ name: string; description: string; permissions: string[] }> = [
   { name: "ADMIN", description: "Acesso completo", permissions: permissions.map(([key]) => key) },
-  { name: "MANAGER", description: "Operação e catálogo", permissions: ["orders.read", "orders.update", "products.read", "products.write", "inventory.write", "promotions.write", "reports.read", "customers.read"] },
+  { name: "MANAGER", description: "Operação e catálogo", permissions: ["orders.read", "orders.update", "products.read", "products.write", "inventory.write", "promotions.write", "reports.read", "customers.read", "customers.manage"] },
   { name: "PICKER", description: "Separação de pedidos", permissions: ["orders.read", "orders.update", "products.read", "inventory.write"] },
   { name: "DRIVER", description: "Entregas atribuídas", permissions: ["orders.read", "orders.update"] },
   { name: "SUPPORT", description: "Atendimento ao cliente", permissions: ["orders.read", "customers.read"] },

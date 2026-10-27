@@ -73,6 +73,18 @@ const statusInputSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
+const customerUpdateInputSchema = z.object({
+  id: z.string().trim().min(1),
+  name: z.string().trim().min(2).max(120),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(160)
+    .transform((value) => value.toLowerCase()),
+  phone: z.string().trim().max(20).optional().default(""),
+});
+
 function slugify(value: string): string {
   return value
     .normalize("NFD")
@@ -656,6 +668,215 @@ export async function deletePromotionsAction(ids: string[]): Promise<AdminAction
   return {
     ok: false,
     message: `${deleted} de ${uniqueIds.length} excluídas. ${detail}${rest}`,
+  };
+}
+
+/** Dados básicos editáveis do cliente no painel (sem pagamento ou histórico). */
+export async function updateAdminCustomer(input: unknown): Promise<AdminActionResult> {
+  const admin = await requireAdminAction("customers.manage");
+  const parsed = customerUpdateInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Dados do cliente inválidos.",
+    };
+  }
+  const data = parsed.data;
+
+  try {
+    const store = await prisma.store.findFirst({
+      where: { active: true },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (!store) return { ok: false, message: "Não há uma loja ativa configurada." };
+
+    await prisma.$transaction(async (transaction) => {
+      const before = await transaction.customer.findFirst({
+        where: {
+          id: data.id,
+          anonymizedAt: null,
+          orders: { some: { storeId: store.id } },
+        },
+        select: { id: true, name: true, email: true, phone: true },
+      });
+      if (!before) {
+        throw new AdminActionError("Cliente não encontrado ou já anonimizado.");
+      }
+
+      const duplicate = await transaction.customer.findFirst({
+        where: { email: data.email, id: { not: data.id } },
+        select: { id: true },
+      });
+      if (duplicate) {
+        throw new AdminActionError("Já existe outro cliente com este e-mail.");
+      }
+
+      const updated = await transaction.customer.update({
+        where: { id: before.id },
+        data: {
+          name: data.name,
+          email: data.email,
+          phone: data.phone || null,
+        },
+        select: { name: true, email: true, phone: true },
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          actorType: "ADMIN",
+          actorAdminId: admin.id,
+          action: "customer.updated",
+          entityType: "Customer",
+          entityId: before.id,
+          before: {
+            name: before.name,
+            email: before.email,
+            phone: before.phone,
+          },
+          after: {
+            name: updated.name,
+            email: updated.email,
+            phone: updated.phone,
+          },
+        },
+      });
+    });
+
+    revalidatePath("/painel/clientes");
+    return { ok: true, message: "Dados do cliente atualizados." };
+  } catch (error) {
+    return actionFailure(error, "Não foi possível atualizar o cliente.");
+  }
+}
+
+/**
+ * Anonimização de um cliente (LGPD) em uma única transação.
+ *
+ * O cadastro permanece no banco para preservar o vínculo com o histórico de
+ * pedidos, mas os dados pessoais são substituídos por valores neutros,
+ * endereços e sessões são removidos e `anonymizedAt` bloqueia novos acessos.
+ */
+async function anonymizeCustomerRecord(
+  adminId: string,
+  storeId: string,
+  customerId: string,
+) {
+  return prisma.$transaction(async (transaction) => {
+    const customer = await transaction.customer.findFirst({
+      where: {
+        id: customerId,
+        anonymizedAt: null,
+        orders: { some: { storeId } },
+      },
+      select: {
+        id: true,
+        _count: { select: { orders: true } },
+      },
+    });
+    if (!customer) {
+      throw new AdminActionError("Cliente não encontrado ou já anonimizado.");
+    }
+
+    const anonymizedAt = new Date();
+
+    await transaction.address.deleteMany({ where: { customerId: customer.id } });
+    await transaction.authSession.deleteMany({ where: { customerId: customer.id } });
+    await transaction.customer.update({
+      where: { id: customer.id },
+      data: {
+        name: "Cliente anônimo",
+        email: `anonimo+${customer.id}@anonimizado.invalid`,
+        phone: null,
+        passwordHash: null,
+        emailVerifiedAt: null,
+        marketingConsentAt: null,
+        whatsappConsentAt: null,
+        anonymizedAt,
+      },
+    });
+    await transaction.auditLog.create({
+      data: {
+        actorType: "ADMIN",
+        actorAdminId: adminId,
+        action: "customer.anonymized",
+        entityType: "Customer",
+        entityId: customer.id,
+        before: { anonymizedAt: null },
+        after: {
+          anonymizedAt: anonymizedAt.toISOString(),
+          ordersPreserved: customer._count.orders,
+        },
+      },
+    });
+
+    return customer;
+  });
+}
+
+/**
+ * Anonimização em massa de clientes. Cada cliente roda na própria transação,
+ * então uma falha isolada não impede os demais; a resposta informa quantos
+ * foram anonimizados e o motivo dos que ficaram.
+ */
+export async function deleteCustomersAction(ids: string[]): Promise<AdminActionResult> {
+  const admin = await requireAdminAction("customers.manage");
+  const parsed = z
+    .array(z.string().trim().min(1))
+    .min(1)
+    .max(200)
+    .safeParse(ids);
+  if (!parsed.success) {
+    return { ok: false, message: "Selecione ao menos um cliente para excluir." };
+  }
+
+  const store = await prisma.store.findFirst({
+    where: { active: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!store) return { ok: false, message: "Não há uma loja ativa configurada." };
+
+  const uniqueIds = [...new Set(parsed.data)];
+  const failures: string[] = [];
+  let anonymized = 0;
+
+  for (const id of uniqueIds) {
+    try {
+      await anonymizeCustomerRecord(admin.id, store.id, id);
+      anonymized += 1;
+    } catch (error) {
+      failures.push(
+        error instanceof AdminActionError
+          ? error.message
+          : "Falha inesperada ao anonimizar um dos clientes.",
+      );
+    }
+  }
+
+  if (anonymized === 0) {
+    return {
+      ok: false,
+      message: failures[0] ?? "Nenhum cliente foi anonimizado.",
+    };
+  }
+
+  revalidatePath("/painel/clientes");
+  revalidatePath("/painel/pedidos");
+  revalidatePath("/painel");
+
+  if (failures.length === 0) {
+    return {
+      ok: true,
+      message: `${anonymized} ${anonymized === 1 ? "cliente anonimizado" : "clientes anonimizados"}. O histórico de pedidos foi preservado.`,
+    };
+  }
+
+  const detail = failures.slice(0, 3).join(" ");
+  const rest = failures.length > 3 ? ` (+${failures.length - 3} outro(s))` : "";
+  return {
+    ok: false,
+    message: `${anonymized} de ${uniqueIds.length} anonimizados. ${detail}${rest}`,
   };
 }
 
