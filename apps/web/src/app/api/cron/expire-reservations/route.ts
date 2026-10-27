@@ -144,9 +144,13 @@ async function expireOrder(orderId: string): Promise<"expired" | "skipped"> {
 }
 
 /**
- * Cron da Vercel: GET /api/cron/expire-reservations a cada 10 minutos.
+ * Cron de expiração de reservas — GET /api/cron/expire-reservations.
  *
- * Protegido por `CRON_SECRET` (a Vercel envia `Authorization: Bearer ...`).
+ * O plano Hobby da Vercel permite apenas um Cron Job por dia, então o
+ * `vercel.json` agenda uma execução diária de segurança (03:00 UTC). A rotina
+ * de 10 em 10 minutos em produção é disparada por um serviço externo
+ * (cron-job.org), que envia o mesmo `Authorization: Bearer $CRON_SECRET`.
+ *
  * Em produção, sem o segredo configurado, responde 503 em vez de expor a rota.
  */
 export async function GET(request: Request): Promise<NextResponse> {
