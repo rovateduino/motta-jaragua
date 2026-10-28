@@ -24,7 +24,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "hortifruti",
     name: "Hortifruti",
-    icon: "🍎",
+    iconName: "carrot",
     tagline: "Frescor todos os dias",
     description: "Frutas, verduras e legumes selecionados para a sua casa.",
     imageTone: "from-lime-50 to-white",
@@ -32,7 +32,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "acougue-e-aves",
     name: "Açougue e aves",
-    icon: "🥩",
+    iconName: "beef",
     tagline: "Corte na medida",
     description: "Carnes bovinas, aves e embutidos com atendimento de açougue.",
     imageTone: "from-red-50 to-white",
@@ -40,7 +40,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "padaria",
     name: "Padaria",
-    icon: "🥖",
+    iconName: "bread",
     tagline: "Quentinho do forno",
     description: "Pães, bolos e produtos assados ao longo do dia.",
     imageTone: "from-orange-50 to-white",
@@ -48,7 +48,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "laticinios-e-frios",
     name: "Laticínios e frios",
-    icon: "🧀",
+    iconName: "cheese",
     tagline: "Direto da serra",
     description: "Leites, queijos, manteigas e frios para o dia a dia.",
     imageTone: "from-amber-50 to-white",
@@ -56,7 +56,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "mercearia",
     name: "Mercearia",
-    icon: "🛒",
+    iconName: "shoppingBasket",
     tagline: "O básico bem feito",
     description: "Itens essenciais da despensa, do arroz ao café.",
     imageTone: "from-yellow-50 to-white",
@@ -64,7 +64,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "bebidas",
     name: "Bebidas",
-    icon: "🥤",
+    iconName: "cupSoda",
     tagline: "Gelada na medida",
     description: "Refrigerantes, sucos e opções para acompanhar as refeições.",
     imageTone: "from-sky-50 to-white",
@@ -72,7 +72,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "limpeza",
     name: "Limpeza",
-    icon: "🧽",
+    iconName: "sprayCan",
     tagline: "Casa limpa e leve",
     description: "Detergentes, sabões e itens para toda a rotina da casa.",
     imageTone: "from-blue-50 to-white",
@@ -80,7 +80,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "higiene-pessoal",
     name: "Higiene pessoal",
-    icon: "🧴",
+    iconName: "soapDispenser",
     tagline: "Cuidado para todos",
     description: "Produtos de higiene e cuidados pessoais para a família.",
     imageTone: "from-violet-50 to-white",
@@ -88,7 +88,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "congelados",
     name: "Congelados",
-    icon: "❄️",
+    iconName: "snowflake",
     tagline: "Praticidade congelada",
     description: "Pratos e vegetais congelados para refeições rápidas.",
     imageTone: "from-cyan-50 to-white",
@@ -96,7 +96,7 @@ export const catalogCategories: readonly CatalogCategory[] = [
   {
     slug: "pet-shop",
     name: "Pet shop",
-    icon: "🐶",
+    iconName: "pawPrint",
     tagline: "Amigos bem cuidados",
     description: "Alimentação e cuidados básicos para os pets da casa.",
     imageTone: "from-stone-100 to-white",

@@ -29,6 +29,100 @@ export function SearchIcon(props: IconProps) {
   );
 }
 
+export function CarrotIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M7.5 8.5c2.8-2.8 7.6-2.4 9.8-.2L7 20.5c-1.6-1.6-2-8.8.5-12Z" />
+      <path d="M11 5c.3-1.5 1.4-2.5 3-3M14 7c1.2-1.1 2.8-1.3 4.2-.8M8 10l5 2M6.5 14l4.8 1.8" />
+    </IconBase>
+  );
+}
+
+export function BeefIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 7c2-3 7-4 10-2l3 2c2 1.3 3 3.2 3 5.2 0 3.9-3.8 7.3-8.2 7.3H8.5C5.5 19.5 3 17 3 14c0-2.4.8-5.1 2-7Z" />
+      <path d="M10 8.5c1.6-1 4-.5 4.9 1.1 1 1.7.2 4-1.7 4.7-1.8.7-4-.4-4.4-2.3-.2-1.3.2-2.7 1.2-3.5Z" />
+    </IconBase>
+  );
+}
+
+export function BreadIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 10c0-3.3 3.6-6 8-6s8 2.7 8 6v9H4v-9Z" />
+      <path d="M9 8.5v3M13 7.5v3M17 8.5v3M4 15h16" />
+    </IconBase>
+  );
+}
+
+export function CheeseIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="m3 10 16-6 2 15H3V10Z" />
+      <path d="M3 10c1.2-2 3.1-3.5 5.2-4.3M9 12h.01M16 10h.01M12 16h.01" />
+      <circle cx="7" cy="15" r="1" />
+    </IconBase>
+  );
+}
+
+export function ShoppingBasketIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="m4 10 2 10h12l2-10H4Z" />
+      <path d="m8 10 4-7 4 7M9 13v4M15 13v4M3 10h18" />
+    </IconBase>
+  );
+}
+
+export function CupSodaIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M6 8h12l-1.2 13H7.2L6 8Z" />
+      <path d="M5 5h14v3H5zM13 5l2-3M9 12v5" />
+    </IconBase>
+  );
+}
+
+export function SprayCanIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M9 7h8l1 14H8L9 7Z" />
+      <path d="M10 7V4h5l2 3M12 4V2h5M17 3h4M11 11h4" />
+    </IconBase>
+  );
+}
+
+export function SoapDispenserIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M8 9h9l1 12H7L8 9Z" />
+      <path d="M10 9V6h5l2 3M12 6V4h4l2 1M9 13h7" />
+    </IconBase>
+  );
+}
+
+export function SnowflakeIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7" />
+      <path d="m8.5 4 3.5 2 3.5-2M8.5 20l3.5-2 3.5 2M3.5 11l3.5-1 1-3M16 17l1-3 3.5-1M3.5 13l3.5 1 1 3M16 7l1 3 3.5 1" />
+    </IconBase>
+  );
+}
+
+export function PawPrintIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <ellipse cx="12" cy="15.5" rx="5" ry="4.5" />
+      <ellipse cx="5.5" cy="10" rx="1.8" ry="2.4" transform="rotate(-25 5.5 10)" />
+      <ellipse cx="10" cy="6.5" rx="1.8" ry="2.4" transform="rotate(-8 10 6.5)" />
+      <ellipse cx="15" cy="6.5" rx="1.8" ry="2.4" transform="rotate(8 15 6.5)" />
+      <ellipse cx="18.5" cy="10" rx="1.8" ry="2.4" transform="rotate(25 18.5 10)" />
+    </IconBase>
+  );
+}
+
 export function CartIcon(props: IconProps) {
   return (
     <IconBase {...props}>

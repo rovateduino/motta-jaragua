@@ -86,7 +86,7 @@ function toCatalogCategory(row: CategoryRow): CatalogCategory {
   return {
     slug: row.slug,
     name: row.name,
-    icon: row.icon ?? "🛒",
+    iconName: meta?.iconName ?? "shoppingBasket",
     tagline: meta?.tagline ?? `Conheça ${row.name}`,
     description:
       meta?.description ?? `Produtos de ${row.name} no Mercado Motta Jaraguá.`,

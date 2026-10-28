@@ -14,11 +14,23 @@ import {
 export interface CatalogCategory {
   readonly slug: string;
   readonly name: string;
-  readonly icon: string;
+  readonly iconName: DepartmentIconName;
   readonly tagline: string;
   readonly description: string;
   readonly imageTone: string;
 }
+
+export type DepartmentIconName =
+  | "carrot"
+  | "beef"
+  | "bread"
+  | "cheese"
+  | "shoppingBasket"
+  | "cupSoda"
+  | "sprayCan"
+  | "soapDispenser"
+  | "snowflake"
+  | "pawPrint";
 
 export interface CatalogProduct {
   readonly id: string;

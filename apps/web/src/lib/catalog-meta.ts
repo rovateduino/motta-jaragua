@@ -3,10 +3,13 @@
  *
  * O PostgreSQL é a fonte dos dados do catálogo (nome, marca, descrição,
  * preço, estoque, promoções e departamentos). Estes campos são puramente
- * visuais/operacionais e não possuem coluna no schema atual: emoji, tom de
- * gradiente, rótulo de embalagem e popularidade. Produtos ou departamentos
- * novos, sem entrada aqui, caem em fallbacks neutros na montagem do catálogo.
+ * visuais/operacionais e não possuem coluna no schema atual: emoji do produto,
+ * ícone do departamento, tom de gradiente, rótulo de embalagem e popularidade.
+ * Produtos ou departamentos novos, sem entrada aqui, caem em fallbacks neutros
+ * na montagem do catálogo.
  */
+
+import type { DepartmentIconName } from "./catalog-core";
 
 export interface ProductMeta {
   readonly emoji: string;
@@ -18,6 +21,7 @@ export interface ProductMeta {
 }
 
 export interface CategoryMeta {
+  readonly iconName: DepartmentIconName;
   readonly tagline: string;
   readonly description: string;
   readonly imageTone: string;
@@ -185,51 +189,61 @@ export const productMeta: Readonly<Record<string, ProductMeta>> = {
 
 export const categoryMeta: Readonly<Record<string, CategoryMeta>> = {
   hortifruti: {
+    iconName: "carrot",
     tagline: "Frescor todos os dias",
     description: "Frutas, verduras e legumes selecionados para a sua casa.",
     imageTone: "from-lime-50 to-white",
   },
   "acougue-e-aves": {
+    iconName: "beef",
     tagline: "Corte na medida",
     description: "Carnes bovinas, aves e embutidos com atendimento de açougue.",
     imageTone: "from-red-50 to-white",
   },
   padaria: {
+    iconName: "bread",
     tagline: "Quentinho do forno",
     description: "Pães, bolos e produtos assados ao longo do dia.",
     imageTone: "from-orange-50 to-white",
   },
   "laticinios-e-frios": {
+    iconName: "cheese",
     tagline: "Direto da serra",
     description: "Leites, queijos, manteigas e frios para o dia a dia.",
     imageTone: "from-amber-50 to-white",
   },
   mercearia: {
+    iconName: "shoppingBasket",
     tagline: "O básico bem feito",
     description: "Itens essenciais da despensa, do arroz ao café.",
     imageTone: "from-yellow-50 to-white",
   },
   bebidas: {
+    iconName: "cupSoda",
     tagline: "Gelada na medida",
     description: "Refrigerantes, sucos e opções para acompanhar as refeições.",
     imageTone: "from-sky-50 to-white",
   },
   limpeza: {
+    iconName: "sprayCan",
     tagline: "Casa limpa e leve",
     description: "Detergentes, sabões e itens para toda a rotina da casa.",
     imageTone: "from-blue-50 to-white",
   },
   "higiene-pessoal": {
+    iconName: "soapDispenser",
     tagline: "Cuidado para todos",
     description: "Produtos de higiene e cuidados pessoais para a família.",
     imageTone: "from-violet-50 to-white",
   },
   congelados: {
+    iconName: "snowflake",
     tagline: "Praticidade congelada",
     description: "Pratos e vegetais congelados para refeições rápidas.",
     imageTone: "from-cyan-50 to-white",
   },
   "pet-shop": {
+    iconName: "pawPrint",
     tagline: "Amigos bem cuidados",
     description: "Alimentação e cuidados básicos para os pets da casa.",
     imageTone: "from-stone-100 to-white",

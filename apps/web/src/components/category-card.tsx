@@ -1,8 +1,35 @@
 import Link from "next/link";
-import { ChevronRightIcon } from "@motta/ui";
-import type { CatalogCategory } from "@/lib/catalog-core";
+import {
+  BeefIcon,
+  BreadIcon,
+  CarrotIcon,
+  CheeseIcon,
+  ChevronRightIcon,
+  CupSodaIcon,
+  PawPrintIcon,
+  ShoppingBasketIcon,
+  SnowflakeIcon,
+  SoapDispenserIcon,
+  SprayCanIcon,
+} from "@motta/ui";
+import type { DepartmentIconName, CatalogCategory } from "@/lib/catalog-core";
+
+const departmentIcons = {
+  carrot: CarrotIcon,
+  beef: BeefIcon,
+  bread: BreadIcon,
+  cheese: CheeseIcon,
+  shoppingBasket: ShoppingBasketIcon,
+  cupSoda: CupSodaIcon,
+  sprayCan: SprayCanIcon,
+  soapDispenser: SoapDispenserIcon,
+  snowflake: SnowflakeIcon,
+  pawPrint: PawPrintIcon,
+} satisfies Record<DepartmentIconName, typeof CarrotIcon>;
 
 export function CategoryCard({ category }: { category: CatalogCategory }) {
+  const Icon = departmentIcons[category.iconName];
+
   return (
     <Link
       href={`/categoria/${category.slug}`}
@@ -10,9 +37,9 @@ export function CategoryCard({ category }: { category: CatalogCategory }) {
     >
       <span
         aria-hidden="true"
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-motta-gray-100 text-2xl transition-colors group-hover:bg-motta-yellow/40"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-motta-gray-100 text-motta-red transition-colors group-hover:bg-motta-red/10"
       >
-        {category.icon}
+        <Icon className="h-6 w-6" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-bold leading-tight text-motta-ink">

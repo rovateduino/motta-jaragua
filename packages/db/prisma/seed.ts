@@ -49,16 +49,16 @@ interface PromotionSeed {
 }
 
 const categories: CategorySeed[] = [
-  { slug: "hortifruti", name: "Hortifruti", icon: "🥬", sortOrder: 1 },
-  { slug: "acougue-e-aves", name: "Açougue e aves", icon: "🥩", sortOrder: 2 },
-  { slug: "padaria", name: "Padaria", icon: "🥖", sortOrder: 3 },
-  { slug: "laticinios-e-frios", name: "Laticínios e frios", icon: "🧀", sortOrder: 4 },
-  { slug: "mercearia", name: "Mercearia", icon: "🛒", sortOrder: 5 },
-  { slug: "bebidas", name: "Bebidas", icon: "🥤", sortOrder: 6 },
-  { slug: "limpeza", name: "Limpeza", icon: "🧼", sortOrder: 7 },
-  { slug: "higiene-pessoal", name: "Higiene pessoal", icon: "🧴", sortOrder: 8 },
-  { slug: "congelados", name: "Congelados", icon: "🧊", sortOrder: 9 },
-  { slug: "pet-shop", name: "Pet shop", icon: "🐶", sortOrder: 10 },
+  { slug: "hortifruti", name: "Hortifruti", icon: "carrot", sortOrder: 1 },
+  { slug: "acougue-e-aves", name: "Açougue e aves", icon: "beef", sortOrder: 2 },
+  { slug: "padaria", name: "Padaria", icon: "bread", sortOrder: 3 },
+  { slug: "laticinios-e-frios", name: "Laticínios e frios", icon: "cheese", sortOrder: 4 },
+  { slug: "mercearia", name: "Mercearia", icon: "shoppingBasket", sortOrder: 5 },
+  { slug: "bebidas", name: "Bebidas", icon: "cupSoda", sortOrder: 6 },
+  { slug: "limpeza", name: "Limpeza", icon: "sprayCan", sortOrder: 7 },
+  { slug: "higiene-pessoal", name: "Higiene pessoal", icon: "soapDispenser", sortOrder: 8 },
+  { slug: "congelados", name: "Congelados", icon: "snowflake", sortOrder: 9 },
+  { slug: "pet-shop", name: "Pet shop", icon: "pawPrint", sortOrder: 10 },
 ];
 
 /**
