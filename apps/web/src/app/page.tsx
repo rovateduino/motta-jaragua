@@ -5,6 +5,7 @@ import {
   buttonStyles,
   Card,
   CardBody,
+  CartIcon,
   cn,
   Container,
   HeadsetIcon,
@@ -37,6 +38,29 @@ const trustItems = [
     icon: HeadsetIcon,
     title: "Atendimento próximo",
     description: "Encontre as informações de contato da loja no rodapé.",
+  },
+];
+
+const advantages = [
+  {
+    icon: CartIcon,
+    title: "Qualidade garantida",
+    description: "Produtos frescos e selecionados todos os dias.",
+  },
+  {
+    icon: TruckIcon,
+    title: "Entrega rápida",
+    description: "Receba em casa com a praticidade que você precisa.",
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: "Compra segura",
+    description: "Seus dados protegidos e pagamento 100% seguro.",
+  },
+  {
+    icon: HeadsetIcon,
+    title: "Atendimento próximo",
+    description: "Estamos aqui para ajudar você pelo WhatsApp.",
   },
 ];
 
@@ -203,37 +227,52 @@ export default async function HomePage() {
           <CatalogMaintenance />
         )}
 
-        <section className="mt-12 sm:mt-16" aria-labelledby="operacao-title">
+        <section className="mt-12 sm:mt-16" aria-labelledby="vantagens-title">
           <div className="overflow-hidden rounded-3xl bg-motta-ink text-white">
-            <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-xs font-bold uppercase tracking-widest text-motta-yellow">
-                  Por trás da loja
-                </p>
-                <h2 id="operacao-title" className="mt-1 text-2xl font-extrabold sm:text-3xl">
-                  Um painel para toda a operação
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-white/70">
-                  Acompanhe pedidos, atualize produtos e preços, gerencie o estoque
-                  e consulte relatórios em um só lugar.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-4 text-xs text-white/60">
-                  <span className="inline-flex items-center gap-1.5">
-                    <ShieldCheckIcon className="h-4 w-4 text-motta-yellow" />
-                    Acesso por papel
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <StoreIcon className="h-4 w-4 text-motta-yellow" />
-                    Estoque por loja
-                  </span>
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-xs font-bold uppercase tracking-widest text-motta-yellow">
+                    Vantagens
+                  </p>
+                  <h2 id="vantagens-title" className="mt-1 text-2xl font-extrabold sm:text-3xl">
+                    Por que comprar no Motta?
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-white/70">
+                    Mais praticidade, economia e cuidado em cada compra do seu dia a dia.
+                  </p>
                 </div>
+                <Link
+                  href="/ofertas"
+                  className={cn(
+                    buttonStyles({ variant: "secondary", size: "lg" }),
+                    "group shrink-0",
+                  )}
+                >
+                  Conheça nossas ofertas
+                  <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
               </div>
-              <Link
-                href="/painel"
-                className={buttonStyles({ variant: "secondary", size: "lg" })}
-              >
-                Abrir painel
-              </Link>
+
+              <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {advantages.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li
+                      key={item.title}
+                      className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-motta-yellow/15 text-motta-yellow">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <h3 className="mt-3 text-sm font-bold text-white">{item.title}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/70">
+                        {item.description}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
         </section>
