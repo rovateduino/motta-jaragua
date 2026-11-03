@@ -3,15 +3,12 @@ import {
   ArrowRightIcon,
   Badge,
   buttonStyles,
-  Card,
-  CardBody,
   CartIcon,
   cn,
   Container,
   HeadsetIcon,
   SectionHeading,
   ShieldCheckIcon,
-  StoreIcon,
   TruckIcon,
 } from "@motta/ui";
 import { formatBRL } from "@motta/domain";
@@ -22,24 +19,6 @@ import { findStoreProduct, getStoreCatalog } from "@/lib/catalog-db";
 import { hasPromotion, resolveProductImageUrl } from "@/lib/catalog-core";
 
 export const dynamic = "force-dynamic";
-
-const trustItems = [
-  {
-    icon: TruckIcon,
-    title: "Entrega em domicílio",
-    description: "Consulte as condições de entrega ao finalizar seu pedido.",
-  },
-  {
-    icon: StoreIcon,
-    title: "Retirada na loja",
-    description: "Escolha uma janela disponível para retirar seu pedido.",
-  },
-  {
-    icon: HeadsetIcon,
-    title: "Atendimento próximo",
-    description: "Encontre as informações de contato da loja no rodapé.",
-  },
-];
 
 const advantages = [
   {
@@ -177,29 +156,6 @@ export default async function HomePage() {
           ) : null}
         </Container>
       </section>
-
-      <Container className="relative z-10 -mt-5 sm:-mt-7">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {trustItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Card key={item.title} className="flex items-start gap-3">
-                <CardBody className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-motta-red/10 text-motta-red">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h2 className="text-sm font-bold text-motta-ink">{item.title}</h2>
-                    <p className="mt-1 text-xs leading-relaxed text-motta-gray-500">
-                      {item.description}
-                    </p>
-                  </div>
-                </CardBody>
-              </Card>
-            );
-          })}
-        </div>
-      </Container>
 
       <Container className="mt-10 sm:mt-14">
         {catalog ? (
